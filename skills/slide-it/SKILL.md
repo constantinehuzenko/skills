@@ -12,7 +12,7 @@ Build the page as a presentation: a stack of screens, each answering one questio
 Every page is this, and nothing more:
 
 - **Question**: small, five words or fewer, at the top of each screen.
-- **Answer**: one or two plain sentences, set large.
+- **Answer**: a short plain answer set large, with one smaller line under it when it needs a reason (see "Say it simply").
 - **Visual explainer**: an interactive scene that animates in steps. Every step has a caption that explains it. Prev / Next sit side by side under the scene, and controls let the reader change the variables.
 - **Ask a follow-up**: a button that opens the comment composer on the screen, so the reader's question goes back to the Claude session that made the page (`comments` capability, `composer_only`).
 - **More**: a fold under each screen for the next layer down. Like an onion, each layer is one level deeper.
