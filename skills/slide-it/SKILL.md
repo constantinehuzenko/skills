@@ -24,7 +24,7 @@ For each screen, write in your reply:
 - the answer, in one or two sentences, said simply (see below);
 - the scene, in one line: what is on screen, what happens to it, what the reader does, and which number reads off the scene.
 
-**Say it simply.** The answer is the sentence a friend would say out loud: what is true, or what to do, in everyday words. Leave out setup, the mechanism, and any "not quite" rebuttal; those go in the scene or the fold. If the reader could act on the answer alone, it's right.
+**Say it simply.** The answer is the sentence a friend would say out loud: what is true, or what to do, in everyday words. Leave out setup, the mechanism, and any "not quite" rebuttal; those go in the scene or the fold. If the reader could act on the answer alone, it's right. When the point needs a reason, keep the large answer short and put one smaller line under it that explains ("`npm i` can rewrite the lockfile, so you might push a change you didn't mean to").
 
 | Question | Too much | Simple |
 |---|---|---|
