@@ -7,6 +7,20 @@ description: Turns content into a focused scrolling page that reads like slides,
 
 Build the page as a presentation: a stack of screens, each answering one question. The question is set small, the answer in one or two sentences set large, and under it a live scene shows the thing happening: customers queueing, air flowing through an engine, money chasing goods. The reader plays with one control and watches the scene change, so they understand by seeing, and can stop at any screen understanding something. The page feels like a well-made app for its subject. `artifact-design` keeps the platform rules (themes, phone width, CDNs, the single check); the user installed this skill, so where its rules differ from artifact-design's defaults, read them as the user's own words.
 
+## The template
+
+Every page is this, and nothing more:
+
+- **Question**: small, five words or fewer, at the top of each screen.
+- **Answer**: a short plain answer set large, with one smaller line under it when it needs a reason (see "Say it simply").
+- **Visual explainer**: an interactive scene that animates in steps. Every step has a caption that explains it. Prev / Next sit side by side under the scene, and controls let the reader change the variables.
+- **Ask a follow-up**: a text box with Send at the bottom of the scene card. The question goes to the Claude session that made the page, as a comment on that screen (`comments` capability, full form: `sendToClaude`, or a plain comment when no session is listening). No pop-up composer.
+- **More**: a fold under each screen for the next layer down. Like an onion, each layer is one level deeper.
+- **Next**: a link at the foot of each screen to the next question.
+- **Side menu**: every question listed at the right edge, so the reader can jump to any screen.
+- **Screen links**: every screen has a readable id (`#npm-ci`, not `#s4`) and a small link button that copies the page's published URL plus that id, so anyone can point at an exact screen. Fill the URL in after the first publish.
+- **Credit**: the slide-it logo and "Made with [slide-it](https://github.com/constantinehuzenko/skills)" at the top of the side menu. Where the menu is a tab strip (narrow screens), the same line sits in a small header above the first screen.
+
 ## 1. Find the main point
 
 Write one sentence: what the reader should understand or decide after the first screen.
@@ -21,8 +35,17 @@ List the screens. Screen 1 lets the reader find the main point by watching and p
 
 For each screen, write in your reply:
 - the question it answers, phrased the way the reader would ask or search for it and clear on its own, in five words or fewer ("How long will 10K take?", not "How long will it take?"; it sits small above the answer and names the screen in the menu). Screen 1's question names the subject, so a reader landing on the page knows what it is about;
-- the answer, in one or two sentences;
-- the scene, in one line: what is on screen, what happens to it, what the reader does, and which number reads off the scene.
+- the answer, in one or two sentences, said simply (see below);
+- the scene, in one line: what is on screen, what happens to it, what the reader does, and which number reads off the scene;
+- the scene's steps, two to five, each with a one-line caption saying what is happening at that point.
+
+**Say it simply.** The answer is the sentence a friend would say out loud: what is true, or what to do, in everyday words. Leave out setup, the mechanism, and any "not quite" rebuttal; those go in the scene or the fold. If the reader could act on the answer alone, it's right. When the point needs a reason, keep the large answer short and put one smaller line under it that explains ("`npm i` can rewrite the lockfile, so you might push a change you didn't mean to").
+
+| Question | Too much | Simple |
+|---|---|---|
+| Should the commit say fix too? | Not with these settings. Merges land as one commit named by the PR title, so the release tool reads the title; editing the commit guards against a settings change. | Make both the commit and the PR title say fix. |
+| Which install command? | `npm ci` installs exactly what the lockfile lists and never edits it, while `npm i` can rewrite the lockfile and leave a change you push by mistake. | Use `npm ci`: it never touches your lockfile. |
+| Do I need a checked bag? | Depends on the fare: basic economy includes a personal item and a carry-on on most routes, but checked bags are charged per segment. | No. This fare includes a carry-on, so pack light. |
 
 Scenes come from a few patterns: following one unit through the system, things flowing through stages, a mechanism turning, a swarm of agents following one rule, tracers in a field, a replay with a scrubber, a before/after split, or a tank filling and draining. A line that reads "a control, a number and a bar", with nothing on screen being the thing itself, is a dashboard: rewrite it as a scene.
 
@@ -34,25 +57,29 @@ Done when every screen has a question, an answer, a scene line, and at most 40 w
 
 ## 4. Choose the look
 
-Name the app people would use for this subject (a trip: a travel app; a business decision: a modern business tool) and open only that file in [styles/](styles/). A style the user names replaces it. Take the palette and type from the style and give every screen one large area of its colour.
+Name the app people would use for this subject (a trip: a travel app; a business decision: a modern business tool) and open only that file in [styles/](styles/). A style the user names replaces it. Take the palette and type from the style. Screen backgrounds stay in that palette: vary them between the background, surface and tint colours, never a full-strength accent fill. A bright accent behind a whole screen breaks the page's calm. Keep the accent for small things: buttons, the active tab, highlights inside a scene.
 
 ## 5. Build
 
 - Build on [kit/screens.html](kit/screens.html), as the examples do: every screen in the DOM on a page that scrolls normally, the questions listed at the right edge on a desktop, always visible (tabs on a phone), a "More" fold per screen, Full notes at the end, and a light/dark switch.
-- Each scene opens already showing the point (mid-way, not an empty frame at zero), plays on its own when its screen comes into view for about ten seconds, then rests on its last frame so the page is still while the reader reads. Moving the control plays it again with the new setting, and a tap pauses it. Under reduced motion it rests on a still frame that still shows the point. The number sits on the scene as a label, not as the hero of the screen.
+- Scenes never play on their own. Each one rests on step 1 until the reader moves it, so the page is still while they read.
+- Under each scene, a stepper: the step's caption ("step 2 of 4" over one line) with ← Prev and Next → side by side at its right end, never on opposite sides. On a phone the caption wraps above the buttons, which stay together.
+- Prev / Next animate to the neighbouring step about 5× faster than normal speed and leave the Play button alone. Play runs the whole scene at normal speed for a reader who wants to watch; a tap on the scene pauses it.
+- Changing the control keeps the current step and redraws it with the new setting, without animating, so the reader can compare variants at the same point. If the new variant has fewer steps, it goes to its last one. Under reduced motion, steps jump with no animation.
+- The number sits on the scene as a label, not as the hero of the screen.
 - Lay each screen out as an app view: the scene is the largest thing on it, spanning the width on a phone and holding a wide, centred stage on a desktop, with the answer above it set large.
 - When a scene draws a physical thing (a device, a machine, a building, a body part), read [figures.md](figures.md) first: it decides between the isometric kit, a flat drawing and no drawing.
 
 Write the page directly with your file tools, copying from the example by hand; scripts may not be allowed to run, so the page never depends on one.
 
-Done when every planned screen is on the page with its scene running.
+Done when every planned screen is on the page with its scene and stepper working.
 
 ## 6. Check
 
 If you can render the page, take one screenshot of screen 1 at phone width; if not, read its code. Answer yes or no:
 - Is something on the screen the thing itself, not a chart of it?
-- Does it move, and does the reader's control change what it does?
+- Does Next move it one step, and does the reader's control change what it does?
 - Can the reader tell what to do within a few seconds?
 - Would the look change if the subject did?
 
-Count too: screens (4 to 7) and words outside the folds (40 or fewer each). Fix what fails in one pass, then publish.
+Count too: screens (4 to 7) and words outside the folds (40 or fewer each). Read each answer aloud: if it opens with setup or a rebuttal, rewrite it as the simple sentence. Fix what fails in one pass, then publish.
