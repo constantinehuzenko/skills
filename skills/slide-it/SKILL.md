@@ -14,7 +14,7 @@ Every page is this, and nothing more:
 - **Question**: small, five words or fewer, at the top of each screen.
 - **Answer**: a short plain answer set large, with one smaller line under it when it needs a reason (see "Say it simply").
 - **Visual explainer**: an interactive scene that animates in steps. Every step has a caption that explains it. Prev / Next sit side by side under the scene, and controls let the reader change the variables.
-- **Ask a follow-up**: a button that opens the comment composer on the screen, so the reader's question goes back to the Claude session that made the page (`comments` capability, `composer_only`).
+- **Ask a follow-up**: a text box with Send at the bottom of the scene card. The question goes to the Claude session that made the page, as a comment on that screen (`comments` capability, full form: `sendToClaude`, or a plain comment when no session is listening). No pop-up composer.
 - **More**: a fold under each screen for the next layer down. Like an onion, each layer is one level deeper.
 - **Next**: a link at the foot of each screen to the next question.
 - **Side menu**: every question listed at the right edge, so the reader can jump to any screen.
