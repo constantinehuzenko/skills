@@ -18,7 +18,7 @@ Every page is this, and nothing more:
 - **More**: a fold under each screen for the next layer down. Like an onion, each layer is one level deeper.
 - **Next**: a link at the foot of each screen to the next question.
 - **Side menu**: every question listed at the right edge, so the reader can jump to any screen.
-- **Header**: a small global header across the top, with the slide-it logo and the credit "Made with [slide-it](https://github.com/constantinehuzenko/skills)".
+- **Credit**: the slide-it logo and "Made with [slide-it](https://github.com/constantinehuzenko/skills)" at the top of the side menu. Where the menu is a tab strip (narrow screens), the same line sits in a small header above the first screen.
 
 ## 1. Find the main point
 
