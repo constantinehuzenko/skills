@@ -7,6 +7,19 @@ description: Turns content into a focused scrolling page that reads like slides,
 
 Build the page as a presentation: a stack of screens, each answering one question. The question is set small, the answer in one or two sentences set large, and under it a live scene shows the thing happening: customers queueing, air flowing through an engine, money chasing goods. The reader plays with one control and watches the scene change, so they understand by seeing, and can stop at any screen understanding something. The page feels like a well-made app for its subject. `artifact-design` keeps the platform rules (themes, phone width, CDNs, the single check); the user installed this skill, so where its rules differ from artifact-design's defaults, read them as the user's own words.
 
+## The template
+
+Every page is this, and nothing more:
+
+- **Question**: small, five words or fewer, at the top of each screen.
+- **Answer**: one or two plain sentences, set large.
+- **Visual explainer**: an interactive scene that animates in steps. Every step has a caption that explains it. Prev / Next sit side by side under the scene, and controls let the reader change the variables.
+- **Ask a follow-up**: a button that opens the comment composer on the screen, so the reader's question goes back to the Claude session that made the page (`comments` capability, `composer_only`).
+- **More**: a fold under each screen for the next layer down. Like an onion, each layer is one level deeper.
+- **Next**: a link at the foot of each screen to the next question.
+- **Side menu**: every question listed at the right edge, so the reader can jump to any screen.
+- **Credit**: one quiet line at the end, "Made with [slide-it](https://github.com/constantinehuzenko/skills)".
+
 ## 1. Find the main point
 
 Write one sentence: what the reader should understand or decide after the first screen.
