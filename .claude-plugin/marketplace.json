@@ -1,0 +1,15 @@
+{
+  "name": "constantinehuzenko",
+  "description": "Claude skills by Koss Huzenko.",
+  "owner": {
+    "name": "Koss Huzenko"
+  },
+  "plugins": [
+    {
+      "name": "slide-it",
+      "source": "./",
+      "description": "Turns research, a report, a plan or a decision into a focused page that reads like slides: one question per screen, a short answer, and a live scene the reader plays with.",
+      "version": "1.0.0"
+    }
+  ]
+}

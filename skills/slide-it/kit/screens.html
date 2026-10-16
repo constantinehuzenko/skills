@@ -1,0 +1,249 @@
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><!-- standalone only: drop this line when pasting into a page that has its own -->
+<!-- slide-it kit / screens: the page scaffold. A stack of screens, one idea each, over an interaction that shows it. A screen's heading answers a question: the question
+     small (.si-q), then the answer set large (.si-idea: one or two sentences), together in an <hgroup>. The page scrolls normally in one centred column; the slide feel
+     is each screen's padding, the large sentence, the stage and the backgrounds. All screens are in the DOM and readable without JS. The script builds the menu from each
+     screen's data-label (the same words as its .si-q; else the .si-q text; else the heading cut to five words): from 1200px the questions listed at the right edge, always
+     visible as plain text (faint until you point at them, the current one in full with a small accent mark; the screens keep full-bleed backgrounds and move their content left, so nothing sits under the list); from 900px
+     to 1199px a Notion-style contents there instead (short marks, the current one longer and in the accent; hover or Tab opens a floating panel of the questions); both
+     with the theme switch small at the top right (same key as theme-toggle.html: si.theme); below 900px a sticky tab strip of the questions with the switch at its end. Each screen but the last ends in a "Next: <question> ↓"
+     link. Keys: Down / Right / PageDown / Space next; Up / Left / PageUp back (not while focus is in a field, slider or arrow-key control; a tall screen scrolls first;
+     the mouse wheel never jumps a screen).
+     SAMPLE CONTENT: replace each hgroup (question, then answer; make screen 1's answer the page h1), each .si-stage with the screen's interaction and each .si-more with
+     that screen's deeper story (2 to 4 short points, the numbers behind it, a small table or a caveat; rename its summary per screen if a question fits), one
+     <section class="si-screen" data-label="..."> per screen (4 to 7), optional modifier --tint | --surface | --accent, id="s1".. for deep links. The .si-pin block and its
+     script are a sample: delete them. With theme-toggle.html's token block on the page, delete the fallback block below. Sources and anything that serves no screen go in the
+     .si-end <details> at the end. -->
+<style>
+/* Fallback tokens (zero specificity): only used when theme-toggle.html's block is absent. Delete when it is present. */
+:where(:root){--bg:#f4f5f7;--surface:#fff;--fg:#14161a;--muted:#5b6270;--line:#dfe2e8;--accent:#3b5bdb;--accent-fg:#fff;--good:#1b7f4b;--warn:#a15c00;--bad:#c0392b;--font-display:ui-sans-serif,system-ui,sans-serif;--font-body:ui-sans-serif,system-ui,sans-serif;--font-mono:ui-monospace,Menlo,monospace;--radius:10px;--dur-fast:150ms;--dur:240ms;--dur-slow:420ms;--ease-out:cubic-bezier(.16,1,.3,1);--ease-in-out:cubic-bezier(.65,0,.35,1);color-scheme:light}
+@media (prefers-color-scheme:dark){:where(:root:not([data-theme="light"])){--bg:#0f1115;--surface:#181b21;--fg:#eceef2;--muted:#9aa1ae;--line:#2a2f38;--accent:#8ea2ff;--accent-fg:#0b0d12;--good:#4cc38a;--warn:#e0a03c;--bad:#ff7b6e;color-scheme:dark}}
+:where(:root[data-theme="dark"]){--bg:#0f1115;--surface:#181b21;--fg:#eceef2;--muted:#9aa1ae;--line:#2a2f38;--accent:#8ea2ff;--accent-fg:#0b0d12;--good:#4cc38a;--warn:#e0a03c;--bad:#ff7b6e;color-scheme:dark}
+:where(body){margin:0 auto;padding:16px;max-width:40rem;background:var(--bg);color:var(--fg);font:16px/1.5 var(--font-body)}
+
+body:has(.si-deck){max-width:none;margin:0;padding:0}                       /* the deck is full-bleed */
+@media (prefers-reduced-motion:no-preference){:root:has(.si-deck){scroll-behavior:smooth}.si-nav{scroll-behavior:smooth}}   /* smooth only for menu and key jumps */
+.si-deck,.si-deck *,.si-deck *::before,.si-deck *::after{box-sizing:border-box}
+.si-deck{--si-m:1;--si-t:calc(var(--dur)*var(--si-m));--si-strip:calc(45px + env(safe-area-inset-top,0px));overflow-x:clip;color:var(--fg);font-family:var(--font-body)}
+@media (prefers-reduced-motion:reduce){.si-deck{--si-m:0}}
+.si-deck :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.si-screen--accent :focus-visible{outline-color:var(--accent-fg)}
+.si-deck.is-js :is(.si-screen,.si-end){scroll-margin-top:var(--si-strip)}   /* a jump lands just under the tab strip */
+
+.si-screen{--si-soft:var(--muted);padding:clamp(48px,10svh,128px) clamp(16px,4vw,48px);background:var(--bg)}   /* the slide feel: air, not a forced height */
+.si-screen--tint{background:var(--tint,color-mix(in srgb,var(--accent) 12%,var(--bg)))}
+.si-screen--surface{background:var(--surface)}
+.si-screen--accent{--si-soft:color-mix(in srgb,var(--accent-fg) 85%,transparent);background:var(--accent);color:var(--accent-fg)}
+.si-screen-in{display:flex;flex-direction:column;gap:clamp(20px,4svh,40px);width:min(100%,64rem);margin:0 auto}
+.si-head{display:grid;gap:clamp(8px,1.6svh,14px);margin:0}                    /* the hgroup: the question, then its answer */
+.si-q{margin:0;font:500 clamp(.9375rem,.88rem + .25vw,1.0625rem)/1.35 var(--font-body);letter-spacing:.015em;color:var(--si-soft)}
+.si-idea{margin:0;max-width:18em;font:700 clamp(1.75rem,1.1rem + 3.4vw,3.5rem)/1.08 var(--font-display);letter-spacing:-.02em;text-wrap:balance}
+.si-stage{flex:1 1 auto;display:flex;flex-direction:column;gap:12px;min-height:clamp(16rem,46svh,30rem);max-height:42rem;padding:clamp(16px,3vw,32px);border:1px solid var(--line);border-radius:calc(var(--radius)*2);background:var(--surface);color:var(--fg)}
+.si-screen--surface .si-stage{background:var(--bg)}
+.si-screen--accent .si-stage{border-color:transparent}
+.si-sample{margin:0;font:600 .6875rem/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.si-todo{margin:auto;padding:12px 18px;border:1.5px dashed var(--muted);border-radius:var(--radius);font:600 .8125rem/1.2 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center}
+.si-next{align-self:flex-start;display:inline-flex;align-items:center;min-height:44px;font:600 .9375rem var(--font-body);color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent)}
+@media (hover:hover){.si-next:hover{text-decoration-color:currentColor}}
+
+/* the per-screen fold under the stage: one quiet line when closed, the deeper story when open (height animates where ::details-content is supported, else it just opens) */
+.si-more{border-block:1px solid color-mix(in srgb,currentColor 20%,transparent)}
+.si-more summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font:500 .9375rem var(--font-body);color:var(--si-soft);cursor:pointer;list-style:none}
+.si-more summary::-webkit-details-marker{display:none}
+.si-more summary::after{content:"";flex:none;width:8px;height:8px;margin-right:4px;border:solid currentColor;border-width:0 1.75px 1.75px 0;transform:translateY(-2px) rotate(45deg);transition:transform var(--si-t) var(--ease-out)}
+.si-more[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+@media (hover:hover){.si-more summary:hover{color:inherit}}
+.si-more-body{max-width:65ch;padding:4px 0 20px;font-size:1rem;line-height:1.55}.si-more-body :is(ul,p){margin:0}.si-more-body ul{padding-left:1.1em}.si-more-body li+li{margin-top:6px}
+.si-more-body table{margin-top:14px;border-collapse:collapse;font-size:.9375rem;font-variant-numeric:tabular-nums}
+.si-more-body :is(th,td){padding:6px 28px 6px 0;border-bottom:1px solid color-mix(in srgb,currentColor 20%,transparent);text-align:left}
+@supports selector(::details-content){
+  .si-more{interpolate-size:allow-keywords}
+  .si-more::details-content{block-size:0;overflow:clip;transition:block-size var(--si-t) var(--ease-out),content-visibility var(--si-t) allow-discrete}
+  .si-more[open]::details-content{block-size:auto}
+}
+
+/* the menu: a sticky tab strip of the questions on a phone; from 900px a Notion-style contents at the right edge, from 1200px the questions always listed there (built by the script; hidden without it) */
+.si-rail{display:none;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;height:45px;border-bottom:1px solid var(--line);background:var(--bg)}
+.si-deck.is-js .si-rail{display:flex}
+.si-nav{position:relative;flex:1;min-width:0;display:flex;margin:0;padding:0;list-style:none;overflow:auto hidden;scrollbar-width:none}
+.si-nav::-webkit-scrollbar{display:none}
+.si-nav li{flex:none}
+.si-nav a{position:relative;display:flex;align-items:center;height:44px;padding:0 14px;border-bottom:3px solid transparent;font:600 .875rem/1.25 var(--font-body);color:var(--muted);text-decoration:none}
+.si-t{min-width:0;max-width:15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* a long question ends in … */
+.si-nav a[aria-current]{color:var(--fg);border-bottom-color:var(--accent)}
+.si-nav :focus-visible{outline-offset:-3px}
+@media (hover:hover){.si-nav a:hover{color:var(--fg)}}
+.si-rail .si-theme-toggle{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-left:1px solid var(--line);border-radius:0;background:transparent;color:var(--fg);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.si-rail .si-theme-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.si-theme-toggle[data-mode=light] .si-theme-moon,.si-theme-toggle[data-mode=dark] .si-theme-sun{display:none}
+@media (min-width:900px){
+  .si-deck{--si-strip:0px}
+  .si-rail{position:fixed;top:0;right:4px;bottom:0;height:auto;align-items:center;border:0;background:none;pointer-events:none}   /* a fixed layer: only the menu and the switch take the pointer */
+  .si-rail .si-theme-toggle{position:fixed;top:12px;right:12px;width:44px;height:44px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);pointer-events:auto}
+  .si-rail .si-theme-toggle svg{width:18px;height:18px}
+}
+@media (min-width:900px) and (max-width:1199.98px){   /* the marks, and a floating panel on hover or Tab: there is no room beside the content yet */
+  .si-nav{flex:none;flex-direction:column;overflow:visible;width:30px;padding:10px 0;border:1px solid var(--line);border-radius:calc(var(--radius)*1.6);background:color-mix(in srgb,var(--surface) 85%,transparent);pointer-events:auto}
+  .si-nav a{justify-content:flex-end;height:22px;padding:0 6px;border:0;border-radius:calc(var(--radius)*.8)}
+  .si-nav a::before{content:"";width:10px;height:2px;border-radius:1px;background:color-mix(in srgb,var(--muted) 60%,transparent);transition:width var(--si-t) var(--ease-out),background var(--si-t)}
+  .si-nav a[aria-current]::before{width:18px;background:var(--accent)}
+  .si-nav a:hover{background:color-mix(in srgb,var(--fg) 7%,transparent)}
+  .si-t{position:absolute;width:1px;height:1px;clip-path:inset(50%)}   /* collapsed: the words stay for screen readers and focus */
+  .si-nav:is(:hover,:has(:focus-visible)){width:max-content;min-width:15rem;max-width:min(21rem,100vw - 3rem);max-height:calc(100svh - 96px);overflow:hidden auto;padding:6px;background:var(--surface);box-shadow:0 8px 24px -14px color-mix(in srgb,var(--fg) 40%,transparent);animation:si-open var(--si-t) var(--ease-out)}
+  .si-nav:is(:hover,:has(:focus-visible)) a{justify-content:flex-start;height:auto;min-height:36px;padding:7px 12px;font-weight:500}
+  .si-nav:is(:hover,:has(:focus-visible)) a::before{display:none}
+  .si-nav:is(:hover,:has(:focus-visible)) .si-t{position:static;width:auto;height:auto;max-width:none;clip-path:none;overflow:visible;white-space:normal}
+  .si-nav:is(:hover,:has(:focus-visible)) a[aria-current]{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--fg);font-weight:600}
+}
+@media (min-width:1200px){   /* beside the content: the questions always listed at the right edge as plain text, faint until pointed at; the screens keep their backgrounds full-bleed and move their content left, clear of the list (--si-toc) */
+  .si-deck.is-js{--si-toc:15rem}
+  .si-deck.is-js :is(.si-screen,.si-end){padding-right:calc(48px + var(--si-toc))}
+  .si-rail{right:0;width:var(--si-toc);padding:0 16px 0 12px}
+  .si-nav{flex:1;min-width:0;flex-direction:column;overflow:hidden auto;max-height:calc(100svh - 120px);padding:0;border:0;border-radius:0;background:none;pointer-events:auto}
+  .si-nav a{justify-content:flex-start;height:auto;min-height:34px;padding:6px 12px;border:0;border-radius:0;font-weight:500;opacity:.6;transition:opacity calc(var(--dur-fast)*var(--si-m)) var(--ease-out),color calc(var(--dur-fast)*var(--si-m)) var(--ease-out)}
+  .si-nav a::before{content:"";position:absolute;left:0;top:50%;width:3px;height:16px;margin-top:-8px;border-radius:2px;background:var(--accent);opacity:0;transition:opacity calc(var(--dur-fast)*var(--si-m)) var(--ease-out)}
+  .si-nav a[aria-current]{opacity:1}
+  .si-nav a[aria-current]::before{opacity:1}
+  .si-nav:is(:hover,:has(:focus-visible)) a{opacity:1}
+  .si-nav a[data-on-accent]{color:var(--accent-fg)}   /* over an accent screen (set by the script) */
+  .si-nav a[data-on-accent]::before{background:var(--accent-fg)}
+  .si-t{max-width:none;overflow:visible;text-overflow:clip;white-space:normal}
+}
+@keyframes si-open{from{opacity:0;transform:translateX(8px)}}
+
+.si-end{padding:24px clamp(16px,4vw,48px) 64px}
+.si-notes{width:min(100%,64rem);margin:0 auto;border:1px solid var(--line);border-radius:calc(var(--radius)*1.6);background:var(--surface)}
+.si-notes summary{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:0 20px;font:600 1rem var(--font-body);cursor:pointer;list-style:none}
+.si-notes summary::-webkit-details-marker{display:none}
+.si-notes summary::after{content:"+";font:400 1.5rem/1 var(--font-mono);color:var(--muted);transition:transform var(--si-t) var(--ease-out)}
+.si-notes[open] summary::after{transform:rotate(45deg)}
+.si-notes-body{padding:0 20px 20px;max-width:65ch;color:var(--muted)}.si-notes-body h3{margin:16px 0 4px;font:600 .875rem var(--font-body);color:var(--fg)}.si-notes-body :is(p,ul){margin:0}
+
+/* sample interaction (delete with its markup and script) */
+.si-pin-fig{display:block;flex:1 1 14rem;min-height:14rem;width:100%}
+.si-pin-h{fill:color-mix(in srgb,var(--fg) 7%,var(--surface))}.si-pin-p{fill:color-mix(in srgb,var(--accent) 16%,var(--surface))}.si-pin-h,.si-pin-p{stroke:var(--line);stroke-width:1.5}
+.si-pin-c{fill:var(--bg)}
+.si-pin-stack rect{fill:var(--surface);stroke:var(--fg);stroke-width:2}.si-pin-stack rect+rect{fill:color-mix(in srgb,var(--accent) 28%,var(--surface))}
+.si-pin-shear{stroke:var(--muted);stroke-width:2;stroke-dasharray:6 5}.si-pin.is-on .si-pin-shear{stroke:var(--good)}
+.si-pin-lbl{display:grid;gap:2px;font:600 .875rem var(--font-body);color:var(--muted)}
+.si-pin-in{display:block;width:100%;height:44px;margin:0;background:none;-webkit-appearance:none;appearance:none;cursor:pointer}
+.si-pin-in::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line)}.si-pin-in::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+.si-pin-in::-webkit-slider-thumb{-webkit-appearance:none;box-sizing:border-box;width:28px;height:28px;margin-top:-11px;border:3px solid var(--accent);border-radius:50%;background:var(--surface)}
+.si-pin-in::-moz-range-thumb{box-sizing:border-box;width:28px;height:28px;border:3px solid var(--accent);border-radius:50%;background:var(--surface)}
+.si-pin-out{min-height:1.5em;font:600 1rem/1.5 var(--font-body);text-align:center;color:var(--muted)}.si-pin.is-on .si-pin-out{color:var(--good)}
+</style>
+
+<div class="si-deck">
+  <nav class="si-rail" aria-label="Screens">
+    <ol class="si-nav"></ol>
+    <button type="button" class="si-theme-toggle" data-mode="light" aria-label="Switch to dark theme" title="Switch theme"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="si-theme-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><path class="si-theme-moon" d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2z"/></svg></button>
+  </nav>
+  <section class="si-screen si-screen--tint" id="s1" data-label="Why does a key turn?">
+    <div class="si-screen-in">
+      <hgroup class="si-head"><p class="si-q">Why does a key turn?</p><h1 class="si-idea">A lock opens only when every pin splits exactly at the shear line.</h1></hgroup>
+      <div class="si-stage si-pin">
+        <p class="si-sample">Sample interaction · replace</p>
+        <svg class="si-pin-fig" viewBox="0 0 260 150" role="img" aria-label="Side view of one pin stack in a lock: a driver pin above a key pin, with the shear line between the housing and the turning plug">
+          <rect class="si-pin-h" x="10" y="8" width="240" height="62"/><rect class="si-pin-p" x="10" y="70" width="240" height="76"/><rect class="si-pin-c" x="106" y="8" width="48" height="138"/>
+          <g class="si-pin-stack"><rect x="110" y="0" width="40" height="40"/><rect x="110" y="40" width="40" height="44"/></g>
+          <line class="si-pin-shear" x1="4" y1="70" x2="256" y2="70"/>
+        </svg>
+        <label class="si-pin-lbl">Key cut height<input class="si-pin-in" type="range" min="0" max="100" value="20"></label>
+        <output class="si-pin-out" role="status"></output>
+      </div>
+      <details class="si-more"><summary>More on this</summary><div class="si-more-body"><ul>
+        <li>Each pin stack is a key pin under a driver pin, pushed down by a spring.</li>
+        <li>The right key lifts every stack until the gap between its two pins sits on the shear line.</li>
+        <li>Too low or too high, and a driver pin still bridges the line, holding the plug in the housing.</li>
+      </ul></div></details>
+    </div>
+  </section>
+  <section class="si-screen" id="s2" data-label="What stops a wrong key?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">What stops a wrong key?</p><h2 class="si-idea">A wrong key leaves one pin across the line, and the plug stays put.</h2></hgroup>
+    <div class="si-stage"><p class="si-todo">Interaction goes here</p></div>
+    <details class="si-more"><summary>Why one pin is enough</summary><div class="si-more-body"><ul>
+      <li>The plug turns only when every stack is clear of the line, so the other four can be perfect and it still holds.</li>
+      <li>A key that is close, but not exact, feels almost right and fails the same way.</li>
+    </ul></div></details>
+  </div></section>
+  <section class="si-screen si-screen--surface" id="s3" data-label="How many keys are there?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">How many keys are there?</p><h2 class="si-idea">Five pins with ten heights each make 100,000 possible keys.</h2></hgroup>
+    <div class="si-stage"><p class="si-todo">Interaction goes here</p></div>
+    <details class="si-more"><summary>The numbers behind 100,000</summary><div class="si-more-body">
+      <p>Each pin multiplies the count by its number of heights, so every extra pin adds a zero.</p>
+      <table><thead><tr><th scope="col">Pins</th><th scope="col">Possible keys</th></tr></thead><tbody><tr><td>3</td><td>1,000</td></tr><tr><td>4</td><td>10,000</td></tr><tr><td>5</td><td>100,000</td></tr><tr><td>6</td><td>1,000,000</td></tr></tbody></table>
+    </div></details>
+  </div></section>
+  <section class="si-screen si-screen--accent" id="s4" data-label="Where is the weak spot?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">Where is the weak spot?</p><h2 class="si-idea">Sloppy tolerances are the weak spot: the more slack, the easier it is to fake a key.</h2></hgroup>
+    <div class="si-stage"><p class="si-todo">Interaction goes here</p></div>
+    <details class="si-more"><summary>What the slack costs</summary><div class="si-more-body"><ul>
+      <li>Slack lets a wrong cut still lift a pin close enough to the line.</li>
+      <li>Caveat: real locks do not use every one of the 100,000 keys, because neighbouring heights cannot differ too much.</li>
+    </ul></div></details>
+  </div></section>
+  <div class="si-end" id="notes" data-label="Full notes"><details class="si-notes"><summary>Full notes</summary><div class="si-notes-body">
+    <h3>Sources</h3><ul><li>Sample · replace with the sources.</li></ul>
+    <h3>Left off the screens</h3><p>Sample · replace with what did not earn a screen.</p>
+  </div></details></div>
+</div>
+
+<script>
+(function(){                                  /* theme: same pattern and key as theme-toggle.html */
+  var KEY='si.theme',H=document.documentElement,mq=matchMedia('(prefers-color-scheme: dark)'),
+      tg=[].slice.call(document.querySelectorAll('.si-theme-toggle:not([data-si-ready])'));
+  function mode(){return H.getAttribute('data-theme')||(mq.matches?'dark':'light')}
+  function paint(){var m=mode();tg.forEach(function(b){b.dataset.mode=m;b.setAttribute('aria-label','Switch to '+(m==='dark'?'light':'dark')+' theme')})}
+  try{var s=localStorage.getItem(KEY);if(s==='light'||s==='dark')H.setAttribute('data-theme',s)}catch(e){}
+  tg.forEach(function(b){b.setAttribute('data-si-ready','');b.addEventListener('click',function(){var n=mode()==='dark'?'light':'dark';H.setAttribute('data-theme',n);try{localStorage.setItem(KEY,n)}catch(e){}paint()})});
+  if(mq.addEventListener)mq.addEventListener('change',paint);paint();
+})();
+(function(){
+  [].forEach.call(document.querySelectorAll('.si-deck:not([data-si-ready])'),function(deck){
+    deck.setAttribute('data-si-ready','');deck.classList.add('is-js');
+    var scr=[].slice.call(deck.querySelectorAll('.si-screen')),end=deck.querySelector('.si-end'),all=end?scr.concat(end):scr,
+        ul=deck.querySelector('.si-nav'),n=all.length,ns=scr.length,H=document.documentElement,cur=-1,links=[],lb=[];
+    all.forEach(function(s,i){                /* ids for deep links (page.html#s3); one label per item, used by every menu */
+      if(!s.id)s.id=s===end?'notes':'s'+(i+1);
+      var q=s.querySelector('.si-q'),w=((s.querySelector('.si-idea,h1,h2,h3')||{}).textContent||'').trim().split(/\s+/);
+      lb[i]=s.getAttribute('data-label')||(q&&q.textContent.trim())||w.slice(0,5).join(' ')+(w.length>5?'…':'')||'Screen '+(i+1);
+    });
+    all.forEach(function(s,i){
+      var li=document.createElement('li'),a=document.createElement('a');
+      a.href='#'+s.id;a.innerHTML='<span class="si-t"></span>';a.firstChild.textContent=lb[i];
+      li.appendChild(a);ul.appendChild(li);links.push(a);
+      if(i<ns-1){var x=document.createElement('a');x.className='si-next';x.href='#'+all[i+1].id;x.textContent='Next: '+lb[i+1]+' ↓';(s.querySelector('.si-screen-in')||s).appendChild(x)}
+    });
+    function show(i){if(i===cur)return;cur=i;links.forEach(function(a,j){if(j===i)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current')});
+      var a=links[i];ul.scrollTo(a.offsetLeft-(ul.clientWidth-a.offsetWidth)/2,a.offsetTop-(ul.clientHeight-a.offsetHeight)/2)}   /* centres it inside the menu; never moves the page */
+    function atEnd(){return innerHeight+scrollY>=H.scrollHeight-2}
+    function sync(){var i=0;all.forEach(function(s,j){if(s.getBoundingClientRect().top<=innerHeight/2)i=j});   /* the last item above mid-screen */
+      if(end&&atEnd()&&scr[ns-1].getBoundingClientRect().top<-8)i=n-1;show(i)}                                  /* page end, last screen read: Full notes */
+    function go(i){if(i<0||i>=n)return;show(i);all[i].scrollIntoView()}   /* smooth or instant is decided by CSS scroll-behavior */
+    document.addEventListener('keydown',function(e){
+      var k=e.key,t=e.target,d=k==='ArrowDown'||k==='ArrowRight'||k==='PageDown'?1:k==='ArrowUp'||k==='ArrowLeft'||k==='PageUp'?-1:k===' '?(e.shiftKey?-1:1):0;
+      if(!d||e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey)return;
+      if(t.closest('input,select,textarea,[contenteditable],[role=slider],[role=radiogroup],[role=tablist],[role=listbox],[role=menu],[role=spinbutton],[role=combobox]'))return;
+      if(k===' '&&t.closest('button,a[href],summary'))return;                 /* Space activates those */
+      var r=all[cur].getBoundingClientRect();
+      if(k!=='ArrowLeft'&&k!=='ArrowRight'&&(d>0?r.bottom>innerHeight+8:r.top<-8))return;   /* a tall screen scrolls first */
+      if(d>0?cur>=n-1:cur<=0)return;                                          /* past the ends the browser scrolls */
+      e.preventDefault();go(cur+d);
+    });
+    var acc=scr.filter(function(s){return s.classList.contains('si-screen--accent')}),wide=matchMedia('(min-width:1200px)'),tk=0;   /* the always-visible list floats over the screens: where it crosses an accent screen its words take the accent's ink */
+    function tone(){tk=0;if(!wide.matches)return;links.forEach(function(a){var r=a.getBoundingClientRect(),y=r.top+r.height/2,on=acc.some(function(s){var b=s.getBoundingClientRect();return b.top<=y&&b.bottom>y});if(on!==a.hasAttribute('data-on-accent'))a.toggleAttribute('data-on-accent',on)})}
+    if(acc.length){addEventListener('scroll',function(){tk=tk||requestAnimationFrame(tone)},{passive:true});addEventListener('resize',tone);tone()}
+    sync();
+    if('IntersectionObserver' in window){   /* a line across mid-screen wakes sync(); visibility never depends on it */
+      var io=new IntersectionObserver(sync,{rootMargin:'-50% 0px -50% 0px'}),was=atEnd();all.forEach(function(s){io.observe(s)});
+      addEventListener('scroll',function(){var e=atEnd();if(e!==was){was=e;sync()}},{passive:true});
+    }
+  });
+})();
+(function(){                                  /* sample interaction script (delete with .si-pin) */
+  var r=document.querySelector('.si-pin:not([data-si-ready])');if(!r)return;r.setAttribute('data-si-ready','');
+  var i=r.querySelector('input'),g=r.querySelector('.si-pin-stack'),o=r.querySelector('output'),was;
+  function draw(){var v=+i.value,hit=Math.abs(v-60)<=10;g.style.transform='translateY('+(60-v/2)+'px)';r.classList.toggle('is-on',hit);
+    if(hit!==was){was=hit;o.textContent=hit?'Every pin splits at the line: the plug turns.':'A pin crosses the line: the plug stays locked.'}}
+  i.addEventListener('input',draw);draw();
+})();
+</script>

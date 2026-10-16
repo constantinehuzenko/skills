@@ -1,0 +1,657 @@
+<!-- slide-it example. Open the whole file before building a page like it. The doctype/html/head/body wrapper is only here so the file runs on its own: when publishing an artifact, leave the wrapper out (the platform adds it) and keep everything inside. -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Second Espresso Machine</title>
+<meta name="description" content="Should a 40-seat café buy a second espresso machine? An illustrative café, its morning rush run live, one question per screen.">
+<!-- slide-it example · decision / should-I. Built on kit/screens.html (structure and nav script kept) with styles/business.md.
+     Five screens, each a question, a large answer and a LIVE SCENE: the café itself at work, one control that changes what happens
+     next, a tap (or the Pause button) that holds it, and the numbers painted on the scene as labels, never a slider + big number + bar.
+     The scenes and the stated numbers run ONE model (MODEL below): the stated figures are its exact averages, the scenes are random
+     draws from it, so a scene's tally wanders around the figure the answer gives. To reuse: copy the file, replace the hgroups,
+     folds, notes and the MODEL, then rewrite each SCENE's step/draw. Engine and loop stay as they are. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* tokens: styles/business.md, in theme-toggle.html's block shape (light on :root, dark under the guarded query AND [data-theme=dark]) */
+:root{--bg:#f8f7f3;--surface:#fff;--fg:#16150f;--muted:#5d5a50;--line:#e4e1d6;--accent:#b45309;--accent-fg:#fff;--good:#15803d;--warn:#a16207;--bad:#b91c1c;--accent-2:#f5b301;--tint:#fdf3d8;
+  --font-display:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --radius:12px;--dur-fast:150ms;--dur:240ms;--dur-slow:420ms;--ease-out:cubic-bezier(.16,1,.3,1);--ease-in-out:cubic-bezier(.65,0,.35,1);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13120e;--surface:#1c1b16;--fg:#f3f1ea;--muted:#a9a596;--line:#2f2d25;--accent:#f5b301;--accent-fg:#1a1300;--good:#4ade80;--warn:#facc15;--bad:#f87171;--accent-2:#2dd4bf;--tint:#2a2410;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13120e;--surface:#1c1b16;--fg:#f3f1ea;--muted:#a9a596;--line:#2f2d25;--accent:#f5b301;--accent-fg:#1a1300;--good:#4ade80;--warn:#facc15;--bad:#f87171;--accent-2:#2dd4bf;--tint:#2a2410;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--font-body)}
+
+/* kit/screens.html: deck, screens, More folds, menu, Full notes (kept; the sample pin and fallback tokens removed) */
+@media (prefers-reduced-motion:no-preference){:root:has(.si-deck){scroll-behavior:smooth}.si-nav{scroll-behavior:smooth}}
+.si-deck,.si-deck *,.si-deck *::before,.si-deck *::after{box-sizing:border-box}
+.si-deck{--si-m:1;--si-t:calc(var(--dur)*var(--si-m));--si-strip:calc(45px + env(safe-area-inset-top,0px));overflow-x:clip;color:var(--fg);font-family:var(--font-body)}
+@media (prefers-reduced-motion:reduce){.si-deck{--si-m:0}}
+.si-deck :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.si-screen--accent :focus-visible{outline-color:var(--accent-fg)}
+.si-screen--accent .si-stage :focus-visible{outline-color:var(--accent)}
+.si-deck.is-js :is(.si-screen,.si-end){scroll-margin-top:var(--si-strip)}
+.si-screen{--si-soft:var(--muted);padding:clamp(48px,10svh,128px) clamp(16px,4vw,48px);background:var(--bg)}
+.si-screen--tint{background:var(--tint)}
+.si-screen--surface{background:var(--surface)}
+.si-screen--accent{--si-soft:color-mix(in srgb,var(--accent-fg) 85%,transparent);background:var(--accent);color:var(--accent-fg)}
+.si-screen-in{display:flex;flex-direction:column;gap:clamp(20px,4svh,40px);width:min(100%,64rem);margin:0 auto}
+.si-head{display:grid;gap:clamp(8px,1.6svh,14px);margin:0}
+.si-q{margin:0;font:500 clamp(.9375rem,.88rem + .25vw,1.0625rem)/1.35 var(--font-body);letter-spacing:.015em;color:var(--si-soft)}
+.si-idea{margin:0;max-width:18em;font:800 clamp(1.75rem,1.1rem + 3.4vw,3.5rem)/1.06 var(--font-display);letter-spacing:-.025em;text-wrap:balance}
+.si-stage{flex:1 1 auto;display:flex;flex-direction:column;gap:12px;min-height:clamp(16rem,46svh,30rem);max-height:42rem;padding:clamp(16px,3vw,32px);border:1px solid var(--line);border-radius:calc(var(--radius)*2);background:var(--surface);color:var(--fg)}
+.si-screen--surface .si-stage{background:var(--bg)}
+.si-screen--accent .si-stage{border-color:transparent}
+.si-next{align-self:flex-start;display:inline-flex;align-items:center;min-height:44px;font:600 .9375rem var(--font-body);color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent)}
+@media (hover:hover){.si-next:hover{text-decoration-color:currentColor}}
+.si-more{border-block:1px solid color-mix(in srgb,currentColor 20%,transparent)}
+.si-more summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font:500 .9375rem var(--font-body);color:var(--si-soft);cursor:pointer;list-style:none}
+.si-more summary::-webkit-details-marker{display:none}
+.si-more summary::after{content:"";flex:none;width:8px;height:8px;margin-right:4px;border:solid currentColor;border-width:0 1.75px 1.75px 0;transform:translateY(-2px) rotate(45deg);transition:transform var(--si-t) var(--ease-out)}
+.si-more[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+@media (hover:hover){.si-more summary:hover{color:inherit}}
+.si-more-body{max-width:65ch;padding:4px 0 20px;font-size:1rem;line-height:1.55}.si-more-body :is(ul,p){margin:0}.si-more-body ul{padding-left:1.1em}.si-more-body li+li{margin-top:6px}
+.si-more-body table,.si-notes-body table{margin-top:14px;border-collapse:collapse;font-size:.9375rem;font-variant-numeric:tabular-nums}
+.si-more-body :is(th,td),.si-notes-body :is(th,td){padding:6px 22px 6px 0;border-bottom:1px solid color-mix(in srgb,currentColor 20%,transparent);text-align:left;vertical-align:top}
+@supports selector(::details-content){.si-more{interpolate-size:allow-keywords}.si-more::details-content{block-size:0;overflow:clip;transition:block-size var(--si-t) var(--ease-out),content-visibility var(--si-t) allow-discrete}.si-more[open]::details-content{block-size:auto}}
+.si-rail{display:none;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;height:45px;border-bottom:1px solid var(--line);background:var(--bg)}
+.si-deck.is-js .si-rail{display:flex}
+.si-nav{position:relative;flex:1;min-width:0;display:flex;margin:0;padding:0;list-style:none;overflow:auto hidden;scrollbar-width:none}
+.si-nav::-webkit-scrollbar{display:none}
+.si-nav li{flex:none}
+.si-nav a{position:relative;display:flex;align-items:center;height:44px;padding:0 14px;border-bottom:3px solid transparent;font:600 .875rem/1.25 var(--font-body);color:var(--muted);text-decoration:none}
+.si-t{min-width:0;max-width:15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.si-nav a[aria-current]{color:var(--fg);border-bottom-color:var(--accent)}
+.si-nav :focus-visible{outline-offset:-3px}
+@media (hover:hover){.si-nav a:hover{color:var(--fg)}}
+.si-rail .si-theme-toggle{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-left:1px solid var(--line);border-radius:0;background:transparent;color:var(--fg);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.si-rail .si-theme-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.si-theme-toggle[data-mode=light] .si-theme-moon,.si-theme-toggle[data-mode=dark] .si-theme-sun{display:none}
+@media (min-width:900px){
+  .si-deck{--si-strip:0px}
+  .si-rail{position:fixed;top:0;right:4px;bottom:0;height:auto;align-items:center;border:0;background:none;pointer-events:none}
+  .si-rail .si-theme-toggle{position:fixed;top:12px;right:12px;width:32px;height:32px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);pointer-events:auto}
+  .si-rail .si-theme-toggle svg{width:18px;height:18px}
+}
+@media (min-width:900px) and (max-width:1199.98px){
+  .si-nav{flex:none;flex-direction:column;overflow:visible;width:30px;padding:10px 0;border:1px solid var(--line);border-radius:calc(var(--radius)*1.6);background:color-mix(in srgb,var(--surface) 85%,transparent);pointer-events:auto}
+  .si-nav a{justify-content:flex-end;height:22px;padding:0 6px;border:0;border-radius:calc(var(--radius)*.8)}
+  .si-nav a::before{content:"";width:10px;height:2px;border-radius:1px;background:color-mix(in srgb,var(--muted) 60%,transparent);transition:width var(--si-t) var(--ease-out),background var(--si-t)}
+  .si-nav a[aria-current]::before{width:18px;background:var(--accent)}
+  .si-nav a:hover{background:color-mix(in srgb,var(--fg) 7%,transparent)}
+  .si-t{position:absolute;width:1px;height:1px;clip-path:inset(50%)}
+  .si-nav:is(:hover,:has(:focus-visible)){width:max-content;min-width:15rem;max-width:min(21rem,100vw - 3rem);max-height:calc(100svh - 96px);overflow:hidden auto;padding:6px;background:var(--surface);box-shadow:0 8px 24px -14px color-mix(in srgb,var(--fg) 40%,transparent);animation:si-open var(--si-t) var(--ease-out)}
+  .si-nav:is(:hover,:has(:focus-visible)) a{justify-content:flex-start;height:auto;min-height:36px;padding:7px 12px;font-weight:500}
+  .si-nav:is(:hover,:has(:focus-visible)) a::before{display:none}
+  .si-nav:is(:hover,:has(:focus-visible)) .si-t{position:static;width:auto;height:auto;max-width:none;clip-path:none;overflow:visible;white-space:normal}
+  .si-nav:is(:hover,:has(:focus-visible)) a[aria-current]{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--fg);font-weight:600}
+}
+@media (min-width:1200px){
+  .si-deck.is-js{--si-toc:15rem}
+  .si-deck.is-js :is(.si-screen,.si-end){padding-right:calc(48px + var(--si-toc))}
+  .si-rail{right:0;width:var(--si-toc);padding:0 16px 0 12px}
+  .si-nav{flex:1;min-width:0;flex-direction:column;overflow:hidden auto;max-height:calc(100svh - 120px);padding:0;border:0;border-radius:0;background:none;pointer-events:auto}
+  .si-nav a{justify-content:flex-start;height:auto;min-height:34px;padding:6px 12px;border:0;border-radius:0;font-weight:500;opacity:.6;transition:opacity calc(var(--dur-fast)*var(--si-m)) var(--ease-out),color calc(var(--dur-fast)*var(--si-m)) var(--ease-out)}
+  .si-nav a::before{content:"";position:absolute;left:0;top:50%;width:3px;height:16px;margin-top:-8px;border-radius:2px;background:var(--accent);opacity:0;transition:opacity calc(var(--dur-fast)*var(--si-m)) var(--ease-out)}
+  .si-nav a[aria-current]{opacity:1}
+  .si-nav a[aria-current]::before{opacity:1}
+  .si-nav:is(:hover,:has(:focus-visible)) a{opacity:1}
+  .si-nav a[data-on-accent]{color:var(--accent-fg)}
+  .si-nav a[data-on-accent]::before{background:var(--accent-fg)}
+  .si-t{max-width:none;overflow:visible;text-overflow:clip;white-space:normal}
+}
+@keyframes si-open{from{opacity:0;transform:translateX(8px)}}
+.si-end{padding:24px clamp(16px,4vw,48px) 64px}
+.si-notes{width:min(100%,64rem);margin:0 auto;border:1px solid var(--line);border-radius:calc(var(--radius)*1.6);background:var(--surface)}
+.si-notes summary{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:0 20px;font:600 1rem var(--font-body);cursor:pointer;list-style:none}
+.si-notes summary::-webkit-details-marker{display:none}
+.si-notes summary::after{content:"+";font:400 1.5rem/1 var(--font-mono);color:var(--muted);transition:transform var(--si-t) var(--ease-out)}
+.si-notes[open] summary::after{transform:rotate(45deg)}
+.si-notes-body{padding:0 20px 20px;max-width:65ch;color:var(--muted)}.si-notes-body h3{margin:18px 0 4px;font:600 .875rem var(--font-body);color:var(--fg)}.si-notes-body :is(p,ul){margin:0}.si-notes-body li+li{margin-top:4px}
+.si-notes-body a{color:var(--fg)}
+
+/* the scenes: a toolbar row, the canvas (the largest thing on the screen), one control, one live sentence */
+.kicker{margin:0 0 calc(clamp(20px,4svh,40px)*-.5);font:500 .75rem/1.4 var(--font-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--si-soft)}
+.scene{max-height:none;gap:14px}
+.scene-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.scene-tag{margin:0;font:500 .6875rem/1.3 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.scene-play{flex:none;display:inline-flex;align-items:center;gap:8px;min-width:44px;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--fg);font:500 .8125rem var(--font-mono);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.scene-play svg{width:14px;height:14px;fill:currentColor}
+@media (hover:hover){.scene-play:hover{border-color:var(--muted)}}
+.scene-cv{display:block;width:100%;height:var(--cv-h,260px);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#rush .scene-cv,#fixes .scene-cv{height:auto;aspect-ratio:1.45;min-height:200px;max-height:min(380px,44svh)}   /* hug the plan on a phone */
+#cost .scene-cv{--cv-h:clamp(380px,54svh,480px)}
+#split .scene-cv{height:auto;aspect-ratio:.75;min-height:380px;max-height:min(460px,62svh)}
+#jar .scene-cv{--cv-h:clamp(310px,48svh,400px)}
+.scene-say{margin:0;min-height:3em;max-width:62ch;font:500 1rem/1.5 var(--font-body)}
+.ctl{display:grid;gap:6px}
+.ctl-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0;font-size:.9375rem;color:var(--muted)}
+.ctl-top output{flex:none;font:500 .9375rem var(--font-mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.ctl-range{--p:.5;display:block;width:100%;height:44px;margin:0;background:none;cursor:pointer;touch-action:pan-y;-webkit-appearance:none;appearance:none}
+.ctl-range::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(90deg,var(--accent) calc(14px + var(--p)*(100% - 28px)),var(--line) 0)}
+.ctl-range::-moz-range-track{height:6px;border-radius:99px;background:var(--line)}
+.ctl-range::-moz-range-progress{height:6px;border-radius:99px;background:var(--accent)}
+.ctl-range::-webkit-slider-thumb{-webkit-appearance:none;box-sizing:border-box;width:28px;height:28px;margin-top:-11px;border:3px solid var(--accent);border-radius:50%;background:var(--accent-2)}
+.ctl-range::-moz-range-thumb{box-sizing:border-box;width:28px;height:28px;border:3px solid var(--accent);border-radius:50%;background:var(--accent-2)}
+.ctl-range:focus-visible{outline:none}
+.ctl-range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--accent)}
+.ctl-range:focus-visible::-moz-range-thumb{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--accent)}
+.seg{--n:3;--i:1;position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));padding:4px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg)}
+.seg-ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/var(--n));border-radius:calc(var(--radius) - 3px);background:var(--accent);transform:translateX(calc(var(--i)*100%));transition:transform var(--si-t) var(--ease-out)}
+.seg label{position:relative;z-index:1;display:grid;min-height:48px}
+.seg input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.seg span{display:grid;place-content:center;padding:4px 6px;border-radius:calc(var(--radius) - 3px);text-align:center;font:600 .875rem/1.2 var(--font-body);color:var(--muted);transition:color var(--dur-fast)}
+.seg small{display:block;margin-top:2px;font:500 .75rem var(--font-mono)}
+.seg input:checked+span{color:var(--accent-fg)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="si-deck">
+  <nav class="si-rail" aria-label="Screens">
+    <ol class="si-nav"></ol>
+    <button type="button" class="si-theme-toggle" data-mode="light" aria-label="Switch to dark theme" title="Switch theme"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="si-theme-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><path class="si-theme-moon" d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2z"/></svg></button>
+  </nav>
+
+  <section class="si-screen si-screen--tint" id="s1" data-label="Is one espresso machine enough?"><div class="si-screen-in">
+    <p class="kicker">Illustrative café · 40 seats · should it buy a second espresso machine?</p>
+    <hgroup class="si-head"><p class="si-q">Is one espresso machine enough?</p><h1 class="si-idea">Not in the rush. The bar makes 60 drinks an hour; at 80 the line reaches the door and one in four walks out.</h1></hgroup>
+    <div class="si-stage scene" id="rush">
+      <div class="scene-top"><p class="scene-tag">Illustrative café · plan view · 8–9 am</p><button type="button" class="scene-play">Pause</button></div>
+      <canvas class="scene-cv" role="img" aria-label="Plan of the café. Customers come in the door on the left, line up toward the counter on the right, wait while the barista makes their drink, and leave with a cup. When the line reaches the door, newcomers turn round and walk out."></canvas>
+      <div class="ctl"><p class="ctl-top"><label for="rush-in">Drinks ordered per hour</label><output for="rush-in">80 an hour</output></p><input id="rush-in" class="ctl-range" type="range" min="20" max="110" step="5" value="80"></div>
+      <p class="scene-say" aria-live="polite">At 80 an hour: about 6 in line (6 min), and 21 an hour walk out, 1 in 4.</p>
+    </div>
+    <details class="si-more"><summary>How the line behaves</summary><div class="si-more-body"><ul>
+      <li>A line forms before the bar is full: orders come in bunches, so at 50 an hour two people already wait.</li>
+      <li>60 drinks an hour is one two-group machine with its barista, the low end of the 60–80 suppliers quote.</li>
+      <li>Past the door the line stops growing: people judge a line by its length and leave.</li></ul>
+      <table><thead><tr><th scope="col">Ordered / hr</th><th scope="col">Waiting</th><th scope="col">Walk out / hr</th></tr></thead><tbody>
+      <tr><td>40</td><td>1</td><td>under 1</td></tr><tr><td>50</td><td>2</td><td>2</td></tr><tr><td>60</td><td>4</td><td>6</td></tr><tr><td>70</td><td>5</td><td>13</td></tr><tr><td>80</td><td>6</td><td>21</td></tr><tr><td>90</td><td>6</td><td>31</td></tr></tbody></table>
+    </div></details>
+  </div></section>
+
+  <section class="si-screen" id="s2" data-label="What does the wait cost?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">What does the wait cost?</p><h2 class="si-idea">About 15 drinks walk out every morning: $57 of margin, $1,700 a month. Patient customers cut that, but the line runs out the door.</h2></hgroup>
+    <div class="si-stage scene" id="cost">
+      <div class="scene-top"><p class="scene-tag">Illustrative café · one morning, 7–10 am</p><button type="button" class="scene-play">Pause</button></div>
+      <canvas class="scene-cv" role="img" aria-label="One morning at the café, sped up. Above, the café plan with its line. In the middle, a tray where every customer who walks out leaves an unsold cup. Below, the morning's demand rising over the bar's 60-an-hour limit around 8 am, with a playhead moving through the morning."></canvas>
+      <div class="ctl"><p class="ctl-top" id="cost-l">Customers walk out when the line is</p>
+        <div class="seg" role="radiogroup" aria-labelledby="cost-l" style="--n:3;--i:1"><span class="seg-ind" aria-hidden="true"></span>
+          <label><input type="radio" name="cost" value="4" data-say="At a line of 4, people leave early: about 22 walk out a morning, $84."><span>4 people</span></label>
+          <label><input type="radio" name="cost" value="8" checked data-say="At the door: about 15 walk out a morning, $57."><span>8 · the door</span></label>
+          <label><input type="radio" name="cost" value="12" data-say="At 12, about 11 walk out ($42), but the line runs out the door."><span>12 · outside</span></label>
+        </div></div>
+      <p class="scene-say" aria-live="polite">At the door: about 15 walk out a morning, $57.</p>
+    </div>
+    <details class="si-more"><summary>Where the $57 comes from</summary><div class="si-more-body"><ul>
+      <li>A drink sells for $5.00 on average; $3.80 of it is margin after coffee, milk and cup.</li>
+      <li>15 walk-outs × $3.80 = $57 a morning; over 30 mornings, about $1,700 a month.</li>
+      <li>Mornings vary widely: one in ten loses under 3 drinks, one in ten over 27. The scene shows one at a time; 15 is the average.</li>
+      <li>Not counted: people who wait nine minutes and don't come back.</li></ul>
+      <table><thead><tr><th scope="col">Walk out at a line of</th><th scope="col">Lost a morning</th><th scope="col">Margin</th></tr></thead><tbody>
+      <tr><td>4</td><td>22 drinks</td><td>$84</td></tr><tr><td>8 (the door)</td><td>15 drinks</td><td>$57</td></tr><tr><td>12</td><td>11 drinks</td><td>$42</td></tr></tbody></table>
+    </div></details>
+  </div></section>
+
+  <section class="si-screen si-screen--surface" id="s3" data-label="What changes with two machines?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">What changes with two machines?</p><h2 class="si-idea">The line all but disappears: at 80 an hour, walk-outs fall from 21 an hour to about one.</h2></hgroup>
+    <div class="si-stage scene" id="split">
+      <div class="scene-top"><p class="scene-tag">Illustrative café · same customers, both cafés</p><button type="button" class="scene-play">Pause</button></div>
+      <canvas class="scene-cv" role="img" aria-label="Two copies of the café, one above the other, with the same customers arriving at the same moments. The top café has one machine and a line to the door; the bottom café has two machines sharing one line."></canvas>
+      <div class="ctl"><p class="ctl-top"><label for="split-in">Drinks ordered per hour</label><output for="split-in">80 an hour</output></p><input id="split-in" class="ctl-range" type="range" min="20" max="140" step="5" value="80"></div>
+      <p class="scene-say" aria-live="polite">Same 80 an hour. One machine: 21 an hour walk out, 1 in 4. Two: about one an hour walks out.</p>
+    </div>
+    <details class="si-more"><summary>Why two do more than double</summary><div class="si-more-body"><ul>
+      <li>Both machines take from one line, so one slow drink doesn't hold everyone up.</li>
+      <li>At 80 an hour each machine is busy two-thirds of the time; the line averages under one person.</li>
+      <li>Two hold until about 110 an hour; past that, the line reaches the door again.</li></ul>
+      <table><thead><tr><th scope="col">Ordered / hr</th><th scope="col">Walk out / hr, one</th><th scope="col">Two</th></tr></thead><tbody>
+      <tr><td>60</td><td>6</td><td>0</td></tr><tr><td>80</td><td>21</td><td>1</td></tr><tr><td>100</td><td>40</td><td>3</td></tr><tr><td>120</td><td>60</td><td>11</td></tr></tbody></table>
+    </div></details>
+  </div></section>
+
+  <section class="si-screen si-screen--accent" id="s4" data-label="When does it pay back?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">When does it pay back?</p><h2 class="si-idea">In about ten months if the rush peaks at 80 an hour. At 65 it takes over two years.</h2></hgroup>
+    <div class="si-stage scene" id="jar">
+      <div class="scene-top"><p class="scene-tag">Illustrative café · $15,000 machine</p><button type="button" class="scene-play">Pause</button></div>
+      <canvas class="scene-cv" role="img" aria-label="A jar filling month by month with the margin from drinks the second machine saves, a slow drip leaving it for running costs, and a line across the jar at the machine's $15,000 price. Months tick by beside it; when the level crosses the line, the machine has paid for itself."></canvas>
+      <div class="ctl"><p class="ctl-top"><label for="jar-in">The rush peaks at</label><output for="jar-in">80 an hour</output></p><input id="jar-in" class="ctl-range" type="range" min="50" max="110" step="5" value="80"></div>
+      <p class="scene-say" aria-live="polite">At a peak of 80 an hour, the machine nets $1,570 a month: paid back in month 10.</p>
+    </div>
+    <details class="si-more"><summary>The payback sum</summary><div class="si-more-body"><ul>
+      <li>Each month = (drinks lost with one machine − with two) × $3.80 × 30 mornings − $90 to run it.</li>
+      <li>$15,000 covers the machine, a second grinder and plumbing.</li>
+      <li>Assumes the person on the till runs it in the rush. A new hire for two rush hours (about $1,200 a month) stretches payback at 80 to about 3½ years.</li></ul>
+      <table><thead><tr><th scope="col">Rush peak / hr</th><th scope="col">Nets a month</th><th scope="col">Paid back</th></tr></thead><tbody>
+      <tr><td>60</td><td>$317</td><td>about 4 years</td></tr><tr><td>70</td><td>$835</td><td>month 18</td></tr><tr><td>80</td><td>$1,570</td><td>month 10</td></tr><tr><td>90</td><td>$2,449</td><td>month 7</td></tr><tr><td>100</td><td>$3,393</td><td>month 5</td></tr></tbody></table>
+    </div></details>
+  </div></section>
+
+  <section class="si-screen si-screen--tint" id="s5" data-label="What else could fix it?"><div class="si-screen-in">
+    <hgroup class="si-head"><p class="si-q">What else could fix it?</p><h2 class="si-idea">Try batch brew first: it saves most walk-outs for $1,800. Buy the machine when the line reaches the door again.</h2></hgroup>
+    <div class="si-stage scene" id="fixes">
+      <div class="scene-top"><p class="scene-tag">Illustrative café · 80 an hour</p><button type="button" class="scene-play">Pause</button></div>
+      <canvas class="scene-cv" role="img" aria-label="The café plan at a rush of 80 drinks an hour with one fix applied: a faster grinder speeds up the bar, a batch-brew urn by the door serves black coffee without the line, or a second machine shares the line."></canvas>
+      <div class="ctl"><p class="ctl-top" id="fixes-l">Fix</p>
+        <div class="seg" role="radiogroup" aria-labelledby="fixes-l" style="--n:3;--i:0"><span class="seg-ind" aria-hidden="true"></span>
+          <label><input type="radio" name="fixes" value="grinder" checked data-say="A faster grinder (70 an hour) cuts walk-outs from 21 to 14 an hour: 6 of 15 drinks a morning saved."><span>Faster grinder<small>$2,500</small></span></label>
+          <label><input type="radio" name="fixes" value="brew" data-say="Batch brew takes black coffee off the machine: walk-outs fall to 6 an hour, 12 of 15 drinks saved."><span>Batch brew<small>$1,800</small></span></label>
+          <label><input type="radio" name="fixes" value="second" data-say="A second machine: walk-outs fall to about one an hour, nearly all 15 drinks saved."><span>2nd machine<small>$15,000</small></span></label>
+        </div></div>
+      <p class="scene-say" aria-live="polite">A faster grinder (70 an hour) cuts walk-outs from 21 to 14 an hour: 6 of 15 drinks a morning saved.</p>
+    </div>
+    <details class="si-more"><summary>The fixes side by side</summary><div class="si-more-body"><ul>
+      <li>Batch brew assumes 1 in 4 rush orders is black coffee now made on the machine; poured from an urn, those skip the line.</li>
+      <li>A grind-on-demand grinder trims about 8 seconds a drink: 60 → 70 an hour.</li>
+      <li>The trigger: if the line still reaches the door after the cheap fixes, the rush has outgrown one machine.</li></ul>
+      <table><thead><tr><th scope="col">Fix</th><th scope="col">Cost</th><th scope="col">Lost a morning (now 15)</th><th scope="col">Paid back</th></tr></thead><tbody>
+      <tr><td>Faster grinder</td><td>$2,500</td><td>8.5</td><td>month 4</td></tr><tr><td>Batch brew</td><td>$1,800</td><td>3.3</td><td>month 2</td></tr><tr><td>Both</td><td>$4,300</td><td>1.4</td><td>month 3</td></tr><tr><td>Second machine</td><td>$15,000</td><td>0.3</td><td>month 10</td></tr></tbody></table>
+    </div></details>
+  </div></section>
+
+  <div class="si-end" id="notes" data-label="Full notes"><details class="si-notes"><summary>Full notes</summary><div class="si-notes-body">
+    <h3>The café is illustrative</h3><p>No real café's numbers are used. The bar's pace sits inside the range suppliers quote; everything else (demand, prices, costs, the 1 in 4 black-coffee share) is invented to be plausible and kept consistent across the screens.</p>
+    <h3>Method</h3><p>Orders arrive at random (a Poisson stream) and each drink takes a random time averaging one minute (exponential). One line feeds the machines; anyone who finds 8 people waiting walks out. This is the textbook M/M/c queue with a finite line. Screens 1, 3 and 5 give its steady state for one busy hour; screens 2 and 4 solve the same model second by second through a morning whose demand rises from 20 an hour to a peak at 8:15 and falls back by 10. Waits follow Little's law (people in line = arrival rate × wait). The scenes run the same model with random customers, so their tallies wander around the stated averages.</p>
+    <h3>Assumptions</h3><table><tbody>
+      <tr><td>Bar pace</td><td>60 drinks an hour per machine</td></tr><tr><td>Line before the door</td><td>8 people</td></tr><tr><td>Morning demand</td><td>20 an hour, peaking at 80 at 8:15</td></tr>
+      <tr><td>Average drink</td><td>$5.00; $3.80 margin</td></tr><tr><td>Second machine</td><td>$15,000 fitted; $90 a month to run; staffed by the till person</td></tr>
+      <tr><td>Faster grinder</td><td>$2,500; 70 an hour</td></tr><tr><td>Batch brew</td><td>$1,800; 1 in 4 rush orders</td></tr><tr><td>Month</td><td>30 alike mornings; afternoons ignored</td></tr></tbody></table>
+    <h3>Sources</h3><ul>
+      <li>Bean &amp; Brew Technologies, <a href="https://beanandbrewtech.com/blogs/coffee-university/1-group-vs-2-group-vs-3-group-which-espresso-machine-does-your-business-need">1-Group vs 2-Group vs 3-Group</a>: a two-group machine makes 60–80 drinks an hour with one barista.</li>
+      <li>Zanduco, <a href="https://www.zanduco.com/us/resources-and-articles/espresso-machine-group-size-guide">1, 2, or 3 Group Espresso Machine?</a>: 40–80 drinks an hour at peak is two-group territory.</li>
+      <li>Lu, Musalem, Olivares &amp; Schilkrut (2013), <a href="https://repositorio.uchile.cl/handle/2250/126320">Measuring the Effect of Queues on Customer Purchases</a>, Management Science 59(8): shoppers react mostly to a line's length, not its speed.</li>
+      <li>Little (1961), <a href="https://doi.org/10.1287/opre.9.3.383">A Proof for the Queuing Formula: L = λW</a>, Operations Research 9(3).</li></ul>
+    <h3>Left off the screens</h3><p>Wages for a new hire (see screen 4's fold), regulars who stop coming after long waits, weekends and afternoon rushes, and whether the counter has room and plumbing for a second machine.</p>
+  </div></details></div>
+</div>
+
+<script>
+(function(){                                  /* theme: kit/screens.html, key si.theme */
+  var KEY='si.theme',H=document.documentElement,mq=matchMedia('(prefers-color-scheme: dark)'),tg=[].slice.call(document.querySelectorAll('.si-theme-toggle'));
+  function mode(){return H.getAttribute('data-theme')||(mq.matches?'dark':'light')}
+  function paint(){var m=mode();tg.forEach(function(b){b.dataset.mode=m;b.setAttribute('aria-label','Switch to '+(m==='dark'?'light':'dark')+' theme')})}
+  try{var s=localStorage.getItem(KEY);if(s==='light'||s==='dark')H.setAttribute('data-theme',s)}catch(e){}
+  tg.forEach(function(b){b.addEventListener('click',function(){var n=mode()==='dark'?'light':'dark';H.setAttribute('data-theme',n);try{localStorage.setItem(KEY,n)}catch(e){}paint()})});
+  if(mq.addEventListener)mq.addEventListener('change',paint);paint();
+})();
+(function(){                                  /* deck: kit/screens.html menu, Next links and keys, unchanged */
+  [].forEach.call(document.querySelectorAll('.si-deck:not([data-si-ready])'),function(deck){
+    deck.setAttribute('data-si-ready','');deck.classList.add('is-js');
+    var scr=[].slice.call(deck.querySelectorAll('.si-screen')),end=deck.querySelector('.si-end'),all=end?scr.concat(end):scr,
+        ul=deck.querySelector('.si-nav'),n=all.length,ns=scr.length,H=document.documentElement,cur=-1,links=[],lb=[];
+    all.forEach(function(s,i){if(!s.id)s.id=s===end?'notes':'s'+(i+1);var q=s.querySelector('.si-q');lb[i]=s.getAttribute('data-label')||(q&&q.textContent.trim())||'Screen '+(i+1)});
+    all.forEach(function(s,i){
+      var li=document.createElement('li'),a=document.createElement('a');a.href='#'+s.id;a.innerHTML='<span class="si-t"></span>';a.firstChild.textContent=lb[i];li.appendChild(a);ul.appendChild(li);links.push(a);
+      if(i<ns-1){var x=document.createElement('a');x.className='si-next';x.href='#'+all[i+1].id;x.textContent='Next: '+lb[i+1]+' ↓';(s.querySelector('.si-screen-in')||s).appendChild(x)}
+    });
+    function show(i){if(i===cur)return;cur=i;links.forEach(function(a,j){if(j===i)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current')});
+      var a=links[i];ul.scrollTo(a.offsetLeft-(ul.clientWidth-a.offsetWidth)/2,a.offsetTop-(ul.clientHeight-a.offsetHeight)/2)}
+    function atEnd(){return innerHeight+scrollY>=H.scrollHeight-2}
+    function sync(){var i=0;all.forEach(function(s,j){if(s.getBoundingClientRect().top<=innerHeight/2)i=j});if(end&&atEnd()&&scr[ns-1].getBoundingClientRect().top<-8)i=n-1;show(i)}
+    function go(i){if(i<0||i>=n)return;show(i);all[i].scrollIntoView()}
+    document.addEventListener('keydown',function(e){
+      var k=e.key,t=e.target,d=k==='ArrowDown'||k==='ArrowRight'||k==='PageDown'?1:k==='ArrowUp'||k==='ArrowLeft'||k==='PageUp'?-1:k===' '?(e.shiftKey?-1:1):0;
+      if(!d||e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey)return;
+      if(t.closest('input,select,textarea,[contenteditable],[role=slider],[role=radiogroup],[role=tablist],[role=listbox],[role=menu],[role=spinbutton],[role=combobox]'))return;
+      if(k===' '&&t.closest('button,a[href],summary'))return;
+      var r=all[cur].getBoundingClientRect();if(k!=='ArrowLeft'&&k!=='ArrowRight'&&(d>0?r.bottom>innerHeight+8:r.top<-8))return;
+      if(d>0?cur>=n-1:cur<=0)return;e.preventDefault();go(cur+d);
+    });
+    var acc=scr.filter(function(s){return s.classList.contains('si-screen--accent')}),wide=matchMedia('(min-width:1200px)'),tk=0;
+    function tone(){tk=0;if(!wide.matches)return;links.forEach(function(a){var r=a.getBoundingClientRect(),y=r.top+r.height/2,on=acc.some(function(s){var b=s.getBoundingClientRect();return b.top<=y&&b.bottom>y});if(on!==a.hasAttribute('data-on-accent'))a.toggleAttribute('data-on-accent',on)})}
+    if(acc.length){addEventListener('scroll',function(){tk=tk||requestAnimationFrame(tone)},{passive:true});addEventListener('resize',tone);tone()}
+    sync();
+    if('IntersectionObserver' in window){var io=new IntersectionObserver(sync,{rootMargin:'-50% 0px -50% 0px'}),was=atEnd();all.forEach(function(s){io.observe(s)});
+      addEventListener('scroll',function(){var e=atEnd();if(e!==was){was=e;sync()}},{passive:true})}
+  });
+})();
+</script>
+
+<script>
+/* ═══ MODEL · the café, illustrative. Every number the page states comes from these two functions. ═══════════════════════
+   steady(): the M/M/c queue with a line of `cap`, solved exactly for one busy hour. morning(): the same queue stepped second
+   by second through 7–10 am as demand rises and falls (expected drinks lost). The scenes below run this model with random
+   customers; they never produce a number the text states. */
+const CAFE = { mu: 60, cap: 8, peak: 80, margin: 3.8, price: 15000, run: 90, days: 30 };
+function steady(lam, mu, c, cap){
+  const K = c + cap; let p = 1, s = 1, Lq = 0, pK = 1;
+  for (let n = 1; n <= K; n++){ p *= lam / (Math.min(n, c) * mu); s += p; if (n > c) Lq += (n - c) * p; pK = p; }
+  const loss = pK / s; Lq /= s;
+  return { loss, lost: lam * loss, Lq, Wq: 60 * Lq / (lam * (1 - loss)) };
+}
+const demand = (h, peak) => 20 + (peak - 20) * Math.exp(-(((h - 8.25) / .75) ** 2));   // orders per hour at clock hour h
+const memo = {};
+function morning(peak, mu, c, cap, share){                       // expected drinks lost between 7 and 10 am
+  const key = [peak, mu, c, cap, share].join(); if (key in memo) return memo[key];
+  const K = c + cap, p = new Float64Array(K + 1), q = new Float64Array(K + 1), dt = 1 / 3600; let lost = 0; p[0] = 1;
+  for (let i = 0; i < 10800; i++){
+    const lam = demand(7 + i * dt, peak) * share; lost += lam * p[K] * dt; q.set(p);
+    for (let n = 0; n <= K; n++){ const up = n < K ? lam * p[n] * dt : 0, dn = Math.min(n, c) * mu * p[n] * dt; q[n] -= up + dn; if (n < K) q[n + 1] += up; if (n) q[n - 1] += dn; }
+    p.set(q);
+  }
+  return memo[key] = lost;
+}
+const money = n => '$' + Math.round(n).toLocaleString('en-US');
+const lineSay = m => m.Lq < .8 ? 'barely a line' : `about ${Math.round(m.Lq)} in line (${Math.max(1, Math.round(m.Wq))} min)`;
+const lostSay = m => m.lost < .5 ? 'nobody walks out' : Math.round(m.lost) === 1 ? 'about one an hour walks out'
+  : `${Math.round(m.lost)} an hour walk out` + (m.loss >= .08 ? `, 1 in ${Math.round(1 / m.loss)}` : '');
+
+/* ═══ RUNTIME · one requestAnimationFrame loop for every scene ═══════════════════════════════════════════════════════════
+   mount(root, make) wires a scene: canvas at devicePixelRatio (cap 2), redraw on resize and theme change, step only while on
+   screen and playing (IntersectionObserver), for RUN seconds and then rest on the last frame until a control or the button plays it again, nothing in a hidden tab, dt clamped to 50 ms. A scene is { reset, layout,
+   step(dt), draw, warm, stepS, pose? }. Under prefers-reduced-motion nothing runs: still() fast-forwards `warm` seconds
+   (then on until pose() is true) and draws one frame that shows the point, and the button becomes Step (`stepS` seconds per press). Tap the canvas = the button. */
+const RM = matchMedia('(prefers-reduced-motion: reduce)'), TAU = Math.PI * 2, C = {}, scenes = [];
+const RUN = 10;   // seconds a scene plays before it rests on its last frame; moving its control or Play runs it again
+let raf = 0, last = 0;
+function tokens(){ const cs = getComputedStyle(document.documentElement);
+  for (const k of ['fg', 'muted', 'line', 'surface', 'accent', 'accent-2', 'good', 'bad']) C[k] = cs.getPropertyValue('--' + k).trim(); }
+function frame(now){
+  raf = 0; const dt = Math.min(.05, (now - last) / 1000); last = now; let busy = false;
+  for (const s of scenes) if (s.on && !s.paused && s.w){ s.step(dt); s.draw(); busy = true; if ((s.left -= dt) <= 0){ s.paused = true; s.label(); } }
+  if (busy && !RM.matches) raf = requestAnimationFrame(frame);
+}
+function kick(){ if (!raf && !RM.matches && !document.hidden && scenes.some(s => s.on && !s.paused)){ last = performance.now(); raf = requestAnimationFrame(frame); } }
+const ICON = { Pause: '<path d="M3 2h3v10H3zM8 2h3v10H8z"/>', Play: '<path d="M3 1.5l9 5.5-9 5.5z"/>', Step: '<path d="M2 1.5l7 5.5-7 5.5zM10 2h2v10h-2z"/>' };
+function mount(root, make){
+  const cv = root.querySelector('canvas'), btn = root.querySelector('.scene-play');
+  const sc = Object.assign(make(root), { root, cv, ctx: cv.getContext('2d'), w: 0, h: 0, on: false, paused: false, left: RUN });   // the scene's own object, so its callbacks see touch()
+  sc.still = () => { if (!sc.w) return; sc.reset(); let i = 0; for (; i < sc.warm * 30; i++) sc.step(1 / 30);
+    for (; sc.pose && !sc.pose() && i < (sc.warm + 20) * 30; i++) sc.step(1 / 30); sc.draw(); };   // run on until the frame shows the point
+  sc.label = () => { const t = RM.matches ? 'Step' : sc.paused ? 'Play' : 'Pause'; btn.innerHTML = `<svg viewBox="0 0 14 14" aria-hidden="true">${ICON[t]}</svg>${t}`; };
+  sc.touch = () => { if (RM.matches) sc.still(); else { sc.paused = false; sc.left = RUN; sc.label(); } kick(); };   // a control change plays it again
+  function press(){ if (RM.matches){ for (let i = 0; i < sc.stepS * 30; i++) sc.step(1 / 30); sc.draw(); } else { sc.paused = !sc.paused; sc.left = RUN; sc.label(); kick(); } }
+  btn.addEventListener('click', press); cv.addEventListener('click', press);
+  new ResizeObserver(() => { const d = Math.min(2, devicePixelRatio || 1); sc.w = cv.clientWidth; sc.h = cv.clientHeight;
+    cv.width = Math.round(sc.w * d); cv.height = Math.round(sc.h * d); sc.ctx.setTransform(d, 0, 0, d, 0, 0); sc.layout();
+    if (RM.matches && !sc.shown) sc.still(); else sc.draw(); sc.shown = true; }).observe(cv);   // the first still waits for a layout
+  new IntersectionObserver(e => { sc.on = e[0].isIntersecting; kick(); }, { rootMargin: '60px 0px' }).observe(cv);
+  scenes.push(sc); sc.reset(); sc.label();
+  return sc;
+}
+function redrawAll(){ tokens(); scenes.forEach(s => s.w && s.draw()); }
+new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawAll);
+RM.addEventListener('change', () => { scenes.forEach(s => { s.label(); if (RM.matches) s.still(); }); kick(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden){ cancelAnimationFrame(raf); raf = 0; } else kick(); });
+if (document.fonts) document.fonts.ready.then(redrawAll);
+tokens();
+function rng(a){ return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const expo = r => -Math.log(1 - r());
+function bindRange(input, fmt, on){ const set = () => { const v = +input.value; input.style.setProperty('--p', (v - input.min) / (input.max - input.min));
+  input.closest('.ctl').querySelector('output').textContent = fmt(v); input.setAttribute('aria-valuetext', fmt(v)); return v; };
+  set(); input.addEventListener('input', () => on(set())); }
+function bindSeg(seg, on){ const ins = [...seg.querySelectorAll('input')];
+  ins.forEach((x, i) => x.addEventListener('change', () => { seg.style.setProperty('--i', i); on(x); })); }
+
+/* ═══ ENGINE · flow through stages (queue): the café counter every queue scene runs ═══════════════════════════════════════
+   Bar = one line feeding c machines, with a walk-out point at `cap`. Logic (arrive / step) is separate from the walking dots
+   (move / drawBar), so two Bars can be fed the same customers (screen 3) and the counts stay the model's. Feed makes the
+   arrivals: exact Poisson times, with thinning when the rate changes over the morning. */
+function Bar(o){ Object.assign(this, { c: 1, mu: 60, cap: 8, brew: 0, onWalk: null }, o); this.reset(); }
+Bar.prototype.reset = function(){ this.line = []; this.at = [null, null]; this.dots = []; this.came = 0; this.walked = 0; this.maxWait = 0; this.t = 0; };
+Bar.prototype.arrive = function(work, u){
+  const d = { x: NaN, y: 0, tx: 0, ty: 0, st: 'in', leg: 0, i: 0, m: 0, work, t0: this.t, left: 0, total: 1 };
+  this.came++; this.dots.push(d);
+  if (u < this.brew) d.st = 'brew';                                            // black coffee from the urn: skips the line
+  else if (this.line.length >= this.cap){ d.st = 'walk'; this.walked++; if (this.onWalk) this.onWalk(d); }
+  else this.line.push(d);
+};
+Bar.prototype.step = function(min){                                            // advance the counter by `min` sim-minutes
+  this.t += min;
+  for (let k = 0; k < 2; k++){ let spare = min;
+    for (;;){ let d = this.at[k];
+      if (!d){ if (k >= this.c || !this.line.length) break;
+        d = this.at[k] = this.line.shift(); d.st = 'serve'; d.m = k; d.left = d.total = d.work * 60 / this.mu;
+        this.maxWait = Math.max(this.maxWait, this.t - spare - d.t0); }
+      if (d.left > spare){ d.left -= spare; break; }
+      spare -= d.left; d.st = 'out'; d.leg = 0; this.at[k] = null;
+    }
+  }
+};
+function Feed(seed){ this.seed = seed; this.r = rng(seed); this.t = 0; this.next = 0; }
+Feed.prototype.restart = function(rate, keep){ if (!keep) this.r = rng(this.seed); this.t = 0; this.next = expo(this.r) * 60 / rate; };   // same customers again unless keep
+Feed.prototype.run = function(bars, h, rate, max){                            // rate(t) orders/hr, never above max
+  const end = this.t + h;
+  while (this.next <= end){
+    for (let i = 0; i < bars.length; i++) bars[i].step(this.next - this.t);
+    this.t = this.next;
+    if (this.r() * max < rate(this.t)){ const w = expo(this.r), u = this.r(); for (let i = 0; i < bars.length; i++) bars[i].arrive(w, u); }
+    this.next = this.t + expo(this.r) * 60 / max;
+  }
+  for (let i = 0; i < bars.length; i++) bars[i].step(end - this.t);
+  this.t = end;
+};
+function plan(x, y, w, h, street){                                             // a café plan fitted in a box; street = pavement slots
+  const s = Math.min(w / (street + 11.8), (h - 24) / 5.3, 60), v = Math.min(s * 1.5, (h - 24) / 5.3), g = { s, v, r: s * .3 };   // s across, v down
+  g.x0 = x + (w - s * (street + 11.8)) / 2; g.xw = g.x0 + street * s; g.xf = g.xw + 9 * s; g.x1 = g.xf + 2.8 * s;
+  g.xs = g.xf - .15 * s; g.xc = g.xf + .2 * s; g.xb = g.xf + 1.2 * s; g.xm = g.xf + 2.15 * s;
+  g.ly = y + 9; g.top = y + 24 + (h - 24 - 5.3 * v) / 2; g.mid = g.top + 2.2 * v; g.up = g.mid - 1.2 * v; g.low = g.mid + 1.2 * v; g.bot = g.top + 5.2 * v;
+  g.ux = g.xw + 1.4 * s; g.slot = i => g.xf - s * (1 + i);
+  g.font = `500 ${Math.round(Math.max(10.5, Math.min(13, s * .5)))}px ${getComputedStyle(document.body).getPropertyValue('--font-mono')}`;
+  return seat(g, 1);
+}
+function seat(g, c){ g.my = c > 1 ? [g.mid - .95 * g.v, g.mid + .95 * g.v] : [g.mid, g.mid]; return g; }
+function aim(g, d){                                                            // where a dot heads on its current leg; false = gone
+  const s = g.s, L = d.leg;
+  switch (d.st){
+    case 'in': d.tx = g.slot(d.i); d.ty = g.mid; return true;
+    case 'serve': d.tx = g.xs; d.ty = g.my[d.m]; return true;
+    case 'out': if (L === 0){ d.tx = g.xs; d.ty = g.my[d.m]; } else { d.tx = L === 1 ? g.xs - s : L === 2 ? g.xw : g.x0 - 2 * s; d.ty = g.low; } return L < 4;
+    case 'walk': if (L === 0){ d.tx = g.wx; d.ty = g.mid; } else { d.tx = L === 1 ? g.wx - s : g.x0 - 2 * s; d.ty = g.up; } return L < 3;
+    default: if (L === 0){ d.tx = g.ux; d.ty = g.up; } else { d.tx = L === 1 ? g.xw : g.x0 - 2 * s; d.ty = g.up; } return L < 3;   // brew
+  }
+}
+function move(b, g, dt, speed){
+  const v = g.s * (5 + 2.5 * speed) * dt; g.wx = g.slot(b.cap);
+  for (let i = 0; i < b.line.length; i++) b.line[i].i = i;
+  for (let i = b.dots.length - 1; i >= 0; i--){ const d = b.dots[i];
+    if (d.x !== d.x){ if (d.snap){ aim(g, d); d.x = d.tx; d.y = d.ty; } else { d.x = g.x0 - g.s; d.y = g.mid; } }
+    if (!aim(g, d)){ b.dots.splice(i, 1); continue; }
+    const dx = d.tx - d.x, dy = d.ty - d.y, r = Math.hypot(dx, dy);
+    if (r <= v){ d.x = d.tx; d.y = d.ty; if (d.st !== 'in' && d.st !== 'serve') d.leg++; } else { d.x += dx * v / r; d.y += dy * v / r; }
+  }
+}
+function drawBar(x, b, g, head, waitMode){
+  const s = g.s, v = g.v, r = g.r, full = b.line.length >= b.cap, fade = px => Math.max(0, Math.min(1, (px - g.x0 + 2 * s) / (1.5 * s)));
+  x.lineWidth = 1; x.strokeStyle = C.line;                                    // seats, walls with the door, counter
+  for (let tx = g.xw + 1.5 * s; tx < g.xf - .8 * s; tx += 1.9 * s){ x.beginPath(); x.arc(tx, g.mid + 2.2 * v, .32 * s, 0, TAU); x.stroke(); }
+  x.lineWidth = 2; x.strokeStyle = C.muted; x.beginPath(); x.moveTo(g.xw, g.up - .6 * v); x.lineTo(g.xw, g.top); x.lineTo(g.x1, g.top);
+  x.lineTo(g.x1, g.bot); x.lineTo(g.xw, g.bot); x.lineTo(g.xw, g.low + .6 * v); x.stroke();
+  x.fillStyle = C.line; x.fillRect(g.xc, g.top + .35 * v, .45 * s, g.bot - g.top - .7 * v);
+  for (let i = 0; i < b.cap; i++){ x.beginPath(); x.arc(g.slot(i), g.mid, r * .35, 0, TAU); x.fill(); }
+  const wx = g.slot(b.cap); x.strokeStyle = full ? C.bad : C.line; x.setLineDash([3, 3]); x.beginPath(); x.moveTo(wx, g.mid - .75 * s); x.lineTo(wx, g.mid + .75 * s); x.stroke(); x.setLineDash([]);
+  x.font = g.font; x.textBaseline = 'middle'; x.fillStyle = C.muted; x.textAlign = 'right'; x.fillText('door', g.xw - 6, g.top + .45 * v);
+  if (b.brew){ x.strokeStyle = C.accent; x.lineWidth = 2; x.beginPath(); x.arc(g.ux, g.top + .5 * v, .3 * s, 0, TAU); x.stroke(); x.textAlign = 'left'; x.fillText('batch brew', g.ux + .5 * s, g.top + .5 * v); }
+  for (let k = 0; k < b.c; k++){ const y = g.my[k], busy = b.at[k];        // machine, its two groups, the barista
+    x.fillStyle = C.fg; x.beginPath(); x.roundRect(g.xm - .42 * s, y - .62 * s, .84 * s, 1.24 * s, .12 * s); x.fill();
+    x.fillStyle = C.surface; x.beginPath(); x.arc(g.xm - .2 * s, y - .28 * s, .12 * s, 0, TAU); x.arc(g.xm - .2 * s, y + .28 * s, .12 * s, 0, TAU); x.fill();
+    x.fillStyle = C.accent; x.beginPath(); x.arc(g.xb + (busy ? Math.sin(b.t * 20) * .07 * s : 0), y, r, 0, TAU); x.fill();
+  }
+  for (let i = 0; i < b.dots.length; i++){ const d = b.dots[i]; if (d.x !== d.x) continue;
+    const gone = d.st === 'walk' && d.leg > 0, cup = (d.st === 'out' || d.st === 'brew') && d.leg > 0;
+    x.globalAlpha = gone || cup ? fade(d.x) : 1; x.fillStyle = gone ? C.bad : cup ? C.muted : C.fg;
+    x.beginPath(); x.arc(d.x, d.y, r, 0, TAU); x.fill();
+    if (cup){ x.fillStyle = C.accent; x.fillRect(d.x + r * .75, d.y - r * 1.1, r * .9, r * 1.1); }
+    if (d.st === 'serve'){ x.strokeStyle = C.accent; x.lineWidth = 2; x.beginPath(); x.arc(d.x, d.y, r + 3, -TAU / 4, -TAU / 4 + TAU * (1 - d.left / d.total)); x.stroke(); }
+  }
+  x.globalAlpha = 1; x.font = g.font; x.textBaseline = 'middle'; x.textAlign = 'left';  // labels: the numbers read off the scene
+  x.fillStyle = C.muted; x.fillText(head, g.x0, g.ly); const hx = g.x0 + x.measureText(head + '  ').width;
+  x.fillStyle = waitMode ? C.fg : C.bad; x.fillText(waitMode ? `longest wait ${Math.round(b.maxWait)} min` : `${b.walked} of ${b.came} walked out`, hx, g.ly);
+  x.textAlign = 'right'; x.fillStyle = C.muted; x.fillText(b.c > 1 ? `2 × ${b.mu}/hr` : `max ${b.mu}/hr`, g.x1, g.ly);
+  if (b.line.length){ x.textAlign = 'center'; x.fillStyle = C.fg; x.fillText(`${b.line.length} waiting · ~${Math.max(1, Math.round(b.line.length * 60 / b.mu / b.c))} min`, (g.xw + g.xf) / 2, g.mid - .8 * v); }
+}
+const showsPoint = b => b.line.length >= b.cap - 1 && b.dots.some(d => d.st === 'walk' && d.leg === 1);   // a still's pose: full line, someone leaving
+const clock = min => { const h = 7 + Math.floor(min / 60), m = Math.floor(min % 60); return h + ':' + (m < 10 ? '0' : '') + m; };
+function preroll(feed, bars, min, rate, max){                                // open mid-rush: run 7:30–8:00 unseen, keep who is in line
+  while (feed.t < min) feed.run(bars, 1, rate, max);
+  for (const b of bars){ b.dots = b.dots.filter(d => d.st === 'in' || d.st === 'serve'); b.dots.forEach(d => d.snap = 1); b.came = b.walked = 0; }
+}
+
+/* ═══ SCENE 1 · flow through stages (queue): door → line → bar → out — state / step / draw ═══════════════════════════════
+   One busy hour (8–9 am, then again) at the rate on the slider, opening mid-rush with the line already formed. Changing the rate changes who arrives next; the line that
+   is already there stays and grows or drains, which is the point. Reads off the scene: walked out of came, waiting, minutes. */
+mount(document.getElementById('rush'), root => {
+  const SPEED = 1.5, feed = new Feed(243), b = new Bar({}), say = root.querySelector('.scene-say'); let lam = 80, g, hour = 0;   // seed: a typical first hour
+  const rate = () => lam;
+  bindRange(root.querySelector('input'), v => v + ' an hour', v => { lam = v; feed.next = feed.t + expo(feed.r) * 60 / lam;
+    say.textContent = `At ${v} an hour: ${lineSay(steady(v, CAFE.mu, 1, CAFE.cap))}, and ${lostSay(steady(v, CAFE.mu, 1, CAFE.cap))}.`; sc.touch(); });
+  const sc = {
+    warm: 36, stepS: 3, pose: () => showsPoint(b),
+    reset(){ b.reset(); feed.restart(lam); preroll(feed, [b], 30, rate, lam); hour = 0; },
+    layout(){ g = plan(0, 0, this.w, this.h, 2); },
+    step(dt){ feed.run([b], dt * SPEED, rate, lam); move(b, g, dt, SPEED);
+      if (Math.floor((feed.t - 30) / 60) !== hour){ hour = Math.floor((feed.t - 30) / 60); b.came = b.walked = 0; } },      // each hour starts a new count
+    draw(){ const x = this.ctx; x.clearRect(0, 0, this.w, this.h); drawBar(x, b, g, clock(60 + (feed.t - 30) % 60)); },
+  };
+  return sc;
+});
+
+/* ═══ SCENE 2 · follow the unit into a tally: a whole morning runs, and every walk-out's cup drops into the tray ═══════════
+   Three layers share one clock: the café (top), the tray of unsold cups (middle), the morning's demand against the bar's
+   limit with a playhead (bottom, a static Path2D built in layout). The control moves the walk-out point and replays the same
+   customers from 7 am (the seed is a typical morning; later mornings vary, as real ones do). Reads off the scene: drinks not sold, their margin, the longest wait, earlier mornings. */
+mount(document.getElementById('cost'), root => {
+  const SPEED = 4, END = 180, feed = new Feed(171), b = new Bar({}), say = root.querySelector('.scene-say'), flies = [], past = [];
+  let g, tray, rib, area, done = 0;
+  const rate = t => demand(7 + t / 60, CAFE.peak);
+  b.onWalk = d => flies.push({ d, t: -1, x: 0, y: 0 });                      // the cup leaves when the walker turns at the line
+  bindSeg(root.querySelector('.seg'), el => { b.cap = +el.value; say.textContent = el.dataset.say; past.length = 0; sc.reset(); sc.touch(); });   // same customers, new patience
+  const slot = k => [tray.x + (k % tray.per) * tray.cs, tray.y + Math.floor(k / tray.per) * tray.cs * 1.25];
+  function cupAt(x, cx, cy, w){ x.beginPath(); x.moveTo(cx - w * .5, cy - w * .55); x.lineTo(cx + w * .5, cy - w * .55); x.lineTo(cx + w * .36, cy + w * .6); x.lineTo(cx - w * .36, cy + w * .6); x.closePath(); }
+  const sc = {
+    warm: 48, stepS: 4,
+    reset(keep){ b.reset(); feed.restart(110, keep); flies.length = 0; done = 0; },
+    layout(){ const W = this.w, H = this.h; g = plan(0, 0, W, H * .45, 6);
+      const cs = Math.min(22, Math.max(15, W / 26)), per = Math.floor(Math.min(W - 8, 600) / cs), x0 = (W - per * cs) / 2;
+      tray = { cs, per, x: x0 + cs / 2, y: H * .45 + 34, ly: H * .45 + 14, x0, x1: x0 + per * cs };
+      rib = { x0, x1: x0 + per * cs, y0: H * .76, y1: H - 18 }; const X = t => rib.x0 + (rib.x1 - rib.x0) * t / END, Y = l => rib.y1 - (rib.y1 - rib.y0) * l / 110;
+      rib.X = X; rib.Y = Y; area = new Path2D(); area.moveTo(X(0), Y(0)); for (let t = 0; t <= END; t += 3) area.lineTo(X(t), Y(rate(t))); area.lineTo(X(END), Y(0)); area.closePath(); },
+    step(dt){
+      if (done){ done -= dt; if (done <= 0) this.reset(true); }   // the next morning: new customers
+      else { feed.run([b], Math.min(dt * SPEED, END - feed.t), rate, 110); if (feed.t >= END){ done = 3; past.unshift(b.walked); past.length = Math.min(past.length, 4); } }
+      move(b, g, dt, SPEED);
+      for (const f of flies){ if (f.t < 0 && f.d.leg > 0){ f.t = 0; f.x = f.d.x; f.y = f.d.y; } else if (f.t >= 0 && f.t < 1) f.t = Math.min(1, f.t + dt / .7); }
+    },
+    draw(){ const x = this.ctx, cs = tray.cs; x.clearRect(0, 0, this.w, this.h); drawBar(x, b, g, clock(feed.t), true);
+      x.font = g.font; x.textAlign = 'left'; x.fillStyle = C.bad; x.fillText(`Not sold this morning: ${b.walked} drinks · ${money(b.walked * CAFE.margin)}`, tray.x0, tray.ly);
+      x.textAlign = 'right'; x.fillStyle = C.muted; if (past.length > (done ? 1 : 0)) x.fillText('earlier mornings: ' + past.slice(done ? 1 : 0).join(' · '), tray.x1, rib.y0 - 24);
+      x.lineWidth = 1.5; x.strokeStyle = C.bad;
+      for (let k = 0; k < flies.length; k++){ const f = flies[k]; if (f.t < 0) continue; const [sx, sy] = slot(k), e = 1 - (1 - f.t) ** 3;
+        cupAt(x, f.x + (sx - f.x) * e, f.y + (sy - f.y) * e - Math.sin(Math.PI * e) * 26, cs * .62); x.globalAlpha = .15; x.fillStyle = C.bad; x.fill(); x.globalAlpha = 1; x.stroke(); }
+      x.fillStyle = C.fg; x.globalAlpha = .08; x.fill(area); x.save(); x.beginPath(); x.rect(rib.x0, rib.y0 - 4, rib.X(feed.t) - rib.x0, rib.y1 - rib.y0 + 4); x.clip();
+      x.globalAlpha = .18; x.fill(area); x.restore(); x.save(); x.beginPath(); x.rect(rib.x0, rib.y0 - 4, rib.x1 - rib.x0, rib.Y(CAFE.mu) - rib.y0 + 4); x.clip();
+      x.fillStyle = C.bad; x.globalAlpha = .35; x.fill(area); x.restore(); x.globalAlpha = 1;
+      const cy = rib.Y(CAFE.mu); x.strokeStyle = C.muted; x.lineWidth = 1; x.setLineDash([4, 4]); x.beginPath(); x.moveTo(rib.x0, cy); x.lineTo(rib.x1, cy); x.stroke(); x.setLineDash([]);
+      x.fillStyle = C.muted; x.textAlign = 'right'; x.fillText('one machine: 60/hr', rib.x1, cy - 9); x.textAlign = 'left'; x.fillText('orders / hr', rib.x0, rib.y0 - 6);
+      const px = rib.X(feed.t); x.strokeStyle = C.fg; x.lineWidth = 2; x.beginPath(); x.moveTo(px, rib.y0); x.lineTo(px, rib.y1); x.stroke();
+      ['7 am', '8', '9', '10 am'].forEach((t, i) => { x.textAlign = i ? i === 3 ? 'right' : 'center' : 'left'; x.fillText(t, rib.X(i * 60), rib.y1 + 10); });
+    },
+  };
+  return sc;
+});
+
+/* ═══ SCENE 3 · before/after split: the same customers walk into a café with one machine and one with two ════════════════
+   One Feed drives both Bars with identical arrival times and drink times, so every difference on screen is the machine.
+   The control is the shared arrival rate. Reads off the scene: walked out of came in each café, side by side. */
+mount(document.getElementById('split'), root => {
+  const SPEED = 1.5, feed = new Feed(243), one = new Bar({ c: 1 }), two = new Bar({ c: 2 }), bars = [one, two], say = root.querySelector('.scene-say');
+  let lam = 80, ga, gb, hour = 0; const rate = () => lam;
+  bindRange(root.querySelector('input'), v => v + ' an hour', v => { lam = v; feed.next = feed.t + expo(feed.r) * 60 / lam;
+    say.textContent = `Same ${v} an hour. One machine: ${lostSay(steady(v, 60, 1, 8))}. Two: ${lostSay(steady(v, 60, 2, 8))}.`; sc.touch(); });
+  const sc = {
+    warm: 36, stepS: 3, pose: () => showsPoint(one),
+    reset(){ one.reset(); two.reset(); feed.restart(lam); preroll(feed, bars, 30, rate, lam); hour = 0; },
+    layout(){ const h = this.h / 2 - 8; ga = plan(0, 0, this.w, h, 2); gb = seat(plan(0, this.h / 2 + 8, this.w, h, 2), 2); },
+    step(dt){ feed.run(bars, dt * SPEED, rate, lam); move(one, ga, dt, SPEED); move(two, gb, dt, SPEED);
+      if (Math.floor((feed.t - 30) / 60) !== hour){ hour = Math.floor((feed.t - 30) / 60); one.came = one.walked = two.came = two.walked = 0; } },
+    draw(){ const x = this.ctx; x.clearRect(0, 0, this.w, this.h);
+      x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(0, this.h / 2); x.lineTo(this.w, this.h / 2); x.stroke();
+      drawBar(x, one, ga, 'ONE MACHINE'); drawBar(x, two, gb, 'TWO MACHINES'); },
+  };
+  return sc;
+});
+
+/* ═══ SCENE 4 · reservoir (stock and flow): saved margin drips in, running costs drip out, the level climbs to the price ═══
+   One month passes per second. The level is the model's exact running total (in − out) × months; the coins ($100 each) and
+   drops are its units made visible, so a busier rush visibly pours faster. Reads off the scene: the month, the saved total
+   in the jar, and the month the level crosses the price line. */
+mount(document.getElementById('jar'), root => {
+  const PRICE = CAFE.price, TOP = PRICE * 1.5, coins = [], drops = [], say = root.querySelector('.scene-say');
+  for (let i = 0; i < 60; i++){ coins.push({ on: 0, x: 0, y: 0, v: 0 }); if (i < 12) drops.push({ on: 0, x: 0, y: 0, v: 0 }); }
+  let peak = 80, gross = 0, net = 0, m = 0, hold = 0, end = 36, inC = 0, inD = 0, J, side, t = 0;
+  function rates(){ const a = morning(peak, CAFE.mu, 1, CAFE.cap, 1), b2 = morning(peak, CAFE.mu, 2, CAFE.cap, 1);
+    gross = (a - b2) * CAFE.margin * CAFE.days; net = gross - CAFE.run; end = net > 0 ? Math.min(36, PRICE * 1.35 / net) : 36; }
+  const sayIt = () => { const mo = PRICE / net; say.textContent = `At a peak of ${peak} an hour, the machine nets ${money(net)} a month: `
+    + (mo <= 36 ? `paid back in month ${Math.ceil(mo)}.` : `not paid back for about ${Math.round(mo / 12)} years.`); };
+  bindRange(root.querySelector('input'), v => v + ' an hour', v => { peak = v; rates(); sayIt(); sc.reset(); sc.touch(); });
+  const drop = (pool, x, y) => { for (const c of pool) if (!c.on){ c.on = 1; c.x = x; c.y = y; c.v = 40; return; } };
+  const sc = {
+    get warm(){ return Math.min(end, PRICE / net + 1); }, stepS: 3,                    // the still: a month past payback
+    reset(){ m = 0; hold = 0; coins.forEach(c => c.on = 0); drops.forEach(c => c.on = 0); },
+    layout(){ const W = this.w, H = this.h, jw = Math.min(230, W * .42), sw = Math.min(250, W - jw - 40), x0 = Math.max(8, (W - jw - 28 - sw) / 2);
+      J = { x: x0, y: 46, w: jw, h: H - 72 }; side = { x: x0 + jw + 28, w: sw, p: Math.min(10, (sw - 33) / 12) }; },
+    step(dt){
+      t += dt; if (hold){ hold -= dt; if (hold <= 0) this.reset(); } else { m = Math.min(end, m + dt); if (m >= end) hold = 2.5;
+        for (inC += dt * gross / 100; inC >= 1; inC--) drop(coins, J.x + J.w / 2 + (Math.random() - .5) * 10, J.y - 18);
+        for (inD += dt * CAFE.run / 100; inD >= 1; inD--) drop(drops, J.x + J.w + 16, J.y + J.h - 6); }
+      const surf = J.y + J.h * (1 - Math.min(TOP, Math.max(0, net * m)) / TOP);
+      for (const c of coins) if (c.on){ c.v += 1500 * dt; c.y += c.v * dt; if (c.y >= surf) c.on = 0; }
+      for (const c of drops) if (c.on){ c.v += 900 * dt; c.y += c.v * dt; if (c.y >= this.h) c.on = 0; }
+    },
+    draw(){ const x = this.ctx, lvl = Math.min(TOP, Math.max(0, net * m)), surf = J.y + J.h * (1 - lvl / TOP), py = J.y + J.h * (1 - PRICE / TOP), paid = lvl >= PRICE, cx = J.x + J.w / 2;
+      x.clearRect(0, 0, this.w, this.h); x.lineWidth = 2; x.strokeStyle = C.muted;
+      x.beginPath(); x.moveTo(cx - 6, 0); x.lineTo(cx - 6, J.y - 18); x.moveTo(cx + 6, 0); x.lineTo(cx + 6, J.y - 18); x.stroke();   // the pipe in
+      x.beginPath(); x.moveTo(J.x + J.w, J.y + J.h - 16); x.lineTo(J.x + J.w + 20, J.y + J.h - 16); x.lineTo(J.x + J.w + 20, J.y + J.h - 8); x.stroke(); // the tap out
+      x.save(); x.beginPath(); x.roundRect(J.x, J.y, J.w, J.h, [6, 6, 18, 18]); x.clip();
+      x.fillStyle = C['accent-2']; x.globalAlpha = .5; x.fillRect(J.x, Math.max(surf, py), J.w, J.y + J.h - Math.max(surf, py));
+      if (paid){ x.fillStyle = C.good; x.globalAlpha = .4; x.fillRect(J.x, surf, J.w, py - surf); }
+      x.globalAlpha = 1; x.strokeStyle = paid ? C.good : C['accent-2']; x.beginPath();
+      for (let i = 0; i <= 24; i++){ const sx = J.x + J.w * i / 24, sy = surf + Math.sin(i * .9 + t * 4) * 1.5; i ? x.lineTo(sx, sy) : x.moveTo(sx, sy); } x.stroke(); x.restore();
+      x.strokeStyle = C.muted; x.lineWidth = 2; x.beginPath(); x.roundRect(J.x, J.y, J.w, J.h, [6, 6, 18, 18]); x.stroke();
+      x.fillStyle = C['accent-2']; x.strokeStyle = C.fg; x.lineWidth = 1; x.globalAlpha = 1;
+      for (const c of coins) if (c.on){ x.beginPath(); x.ellipse(c.x, c.y, 6, 2.6, 0, 0, TAU); x.fill(); x.globalAlpha = .4; x.stroke(); x.globalAlpha = 1; }
+      x.fillStyle = C.bad; for (const c of drops) if (c.on){ x.beginPath(); x.arc(c.x, c.y, 2.6, 0, TAU); x.fill(); }
+      x.strokeStyle = paid ? C.good : C.fg; x.lineWidth = 2; x.setLineDash([6, 5]); x.beginPath(); x.moveTo(J.x - 6, py); x.lineTo(side.x - 6, py); x.stroke(); x.setLineDash([]);
+      x.font = `600 13px ${getComputedStyle(document.body).getPropertyValue('--font-mono')}`; x.textBaseline = 'middle'; x.textAlign = 'left';
+      x.fillStyle = C.fg; x.fillText(`Month ${Math.min(36, Math.floor(m) + 1)}`, side.x, 12);
+      for (let i = 0; i < 36; i++){ const p = side.p, px = side.x + (i % 12) * (p + 3), pyy = 26 + Math.floor(i / 12) * (p + 3);   // the months, a year a row
+        x.fillStyle = i === Math.ceil(PRICE / net) - 1 && paid ? C.good : i < m ? C.fg : C.line; x.globalAlpha = i < m ? .75 : 1; x.fillRect(px, pyy, p, p); }
+      x.globalAlpha = 1; x.font = `500 12px ${getComputedStyle(document.body).getPropertyValue('--font-mono')}`;
+      x.fillStyle = C['accent-2']; x.beginPath(); x.ellipse(side.x + 6, 75 + side.p * 2, 6, 2.6, 0, 0, TAU); x.fill();
+      x.fillStyle = C.fg; x.fillText(`+${money(gross)}/mo saved`, side.x + 18, 75 + side.p * 2);
+      x.fillStyle = C.bad; x.beginPath(); x.arc(side.x + 6, 93 + side.p * 2, 2.6, 0, TAU); x.fill(); x.fillStyle = C.fg; x.fillText(`−${money(CAFE.run)}/mo to run`, side.x + 18, 93 + side.p * 2);
+      const ly = Math.max(py, 126 + side.p * 2); x.fillStyle = paid ? C.good : m >= 36 ? C.bad : C.fg;
+      x.fillText(paid ? 'Paid back' : money(PRICE), side.x, ly - 8); x.fillStyle = C.muted;
+      x.fillText(paid ? `in month ${Math.ceil(PRICE / net)}` : m >= 36 ? 'still short, 3 yrs' : 'the machine', side.x, ly + 8);
+      const tag = money(lvl), tw = x.measureText(tag).width + 12, ty = Math.min(J.y + J.h - 14, Math.abs(surf + 16 - py) < 14 ? py + 16 : surf + 16);  // the level's label sits on the fill
+      x.fillStyle = C.surface; x.beginPath(); x.roundRect(cx - tw / 2, ty - 10, tw, 20, 6); x.fill(); x.fillStyle = C.fg; x.textAlign = 'center'; x.fillText(tag, cx, ty);
+    },
+  };
+  rates();
+  return sc;
+});
+
+/* ═══ SCENE 5 · flow through stages with one part swapped: the same café at 80 an hour under each fix ═══════════════════
+   The control changes the Bar in place (pace, an urn by the door, a second machine), so the reader watches the existing line
+   drain under the new fix instead of a fresh café. Reads off the scene: walked out of came, the bar's pace, the line. */
+mount(document.getElementById('fixes'), root => {
+  const SPEED = 1.5, LAM = CAFE.peak, feed = new Feed(160), b = new Bar({ mu: 70 }), say = root.querySelector('.scene-say'); let g, hour = 0;
+  const FIX = { grinder: { c: 1, mu: 70, brew: 0 }, brew: { c: 1, mu: 60, brew: .25 }, second: { c: 2, mu: 60, brew: 0 } }, rate = () => LAM;
+  bindSeg(root.querySelector('.seg'), el => { const f = FIX[el.value];
+    if (f.c < b.c && b.at[1]){ b.at[1].st = 'out'; b.at[1].leg = 0; b.at[1] = null; }
+    Object.assign(b, f); seat(g, f.c); b.came = b.walked = 0; say.textContent = el.dataset.say; sc.touch(); });
+  const sc = {
+    warm: 36, stepS: 3,
+    reset(){ b.reset(); feed.restart(LAM); preroll(feed, [b], 30, rate, LAM); hour = 0; },
+    layout(){ g = seat(plan(0, 0, this.w, this.h, 2), b.c); },
+    step(dt){ feed.run([b], dt * SPEED, rate, LAM); move(b, g, dt, SPEED);
+      if (Math.floor((feed.t - 30) / 60) !== hour){ hour = Math.floor((feed.t - 30) / 60); b.came = b.walked = 0; } },
+    draw(){ const x = this.ctx; x.clearRect(0, 0, this.w, this.h); drawBar(x, b, g, clock(60 + (feed.t - 30) % 60)); },
+  };
+  return sc;
+});
+</script>
+</body>
+</html>
