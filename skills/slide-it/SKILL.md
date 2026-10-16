@@ -43,7 +43,7 @@ Name the app people would use for this subject (a trip: a travel app; a business
 - Scenes never play on their own. Each one rests on step 1 until the reader moves it, so the page is still while they read.
 - Under each scene, a stepper: the step's caption ("step 2 of 4" over one line) with ← Prev and Next → side by side at its right end, never on opposite sides. On a phone the caption wraps above the buttons, which stay together.
 - Prev / Next animate to the neighbouring step about 5× faster than normal speed and leave the Play button alone. Play runs the whole scene at normal speed for a reader who wants to watch; a tap on the scene pauses it.
-- Changing the control redraws the scene on step 1 with the new setting, without animating. Under reduced motion, steps jump with no animation.
+- Changing the control keeps the current step and redraws it with the new setting, without animating, so the reader can compare variants at the same point. If the new variant has fewer steps, it goes to its last one. Under reduced motion, steps jump with no animation.
 - The number sits on the scene as a label, not as the hero of the screen.
 - Lay each screen out as an app view: the scene is the largest thing on it, spanning the width on a phone and holding a wide, centred stage on a desktop, with the answer above it set large.
 - When a scene draws a physical thing (a device, a machine, a building, a body part), read [figures.md](figures.md) first: it decides between the isometric kit, a flat drawing and no drawing.
