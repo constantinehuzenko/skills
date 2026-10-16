@@ -4,6 +4,8 @@
 
 A Claude skill that turns research, a report, a plan or a decision into a focused page that reads like slides. Each screen answers one question, phrased the way you would search for it, in one or two sentences, with a live scene underneath that you can play with. Every screen goes a level deeper.
 
+On [skills.sh](https://skills.sh/constantinehuzenko/skills/slide-it).
+
 <!-- before/after image: plain Claude vs slide-it, same input -->
 
 ## Install
