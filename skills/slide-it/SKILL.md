@@ -34,7 +34,7 @@ Done when every screen has a question, an answer, a scene line, and at most 40 w
 
 ## 4. Choose the look
 
-Name the app people would use for this subject (a trip: a travel app; a business decision: a modern business tool) and open only that file in [styles/](styles/). A style the user names replaces it. Take the palette and type from the style and give every screen one large area of its colour.
+Name the app people would use for this subject (a trip: a travel app; a business decision: a modern business tool) and open only that file in [styles/](styles/). A style the user names replaces it. Take the palette and type from the style. Screen backgrounds stay in that palette: vary them between the background, surface and tint colours, never a full-strength accent fill. A bright accent behind a whole screen breaks the page's calm. Keep the accent for small things: buttons, the active tab, highlights inside a scene.
 
 ## 5. Build
 
