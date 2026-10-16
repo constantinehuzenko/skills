@@ -21,9 +21,17 @@ List the screens. Screen 1 lets the reader find the main point by watching and p
 
 For each screen, write in your reply:
 - the question it answers, phrased the way the reader would ask or search for it and clear on its own, in five words or fewer ("How long will 10K take?", not "How long will it take?"; it sits small above the answer and names the screen in the menu). Screen 1's question names the subject, so a reader landing on the page knows what it is about;
-- the answer, in one or two sentences;
+- the answer, in one or two sentences, said simply (see below);
 - the scene, in one line: what is on screen, what happens to it, what the reader does, and which number reads off the scene;
 - the scene's steps, two to five, each with a one-line caption saying what is happening at that point.
+
+**Say it simply.** The answer is the sentence a friend would say out loud: what is true, or what to do, in everyday words. Leave out setup, the mechanism, and any "not quite" rebuttal; those go in the scene or the fold. If the reader could act on the answer alone, it's right. When the point needs a reason, keep the large answer short and put one smaller line under it that explains ("`npm i` can rewrite the lockfile, so you might push a change you didn't mean to").
+
+| Question | Too much | Simple |
+|---|---|---|
+| Should the commit say fix too? | Not with these settings. Merges land as one commit named by the PR title, so the release tool reads the title; editing the commit guards against a settings change. | Make both the commit and the PR title say fix. |
+| Which install command? | `npm ci` installs exactly what the lockfile lists and never edits it, while `npm i` can rewrite the lockfile and leave a change you push by mistake. | Use `npm ci`: it never touches your lockfile. |
+| Do I need a checked bag? | Depends on the fare: basic economy includes a personal item and a carry-on on most routes, but checked bags are charged per segment. | No. This fare includes a carry-on, so pack light. |
 
 Scenes come from a few patterns: following one unit through the system, things flowing through stages, a mechanism turning, a swarm of agents following one rule, tracers in a field, a replay with a scrubber, a before/after split, or a tank filling and draining. A line that reads "a control, a number and a bar", with nothing on screen being the thing itself, is a dashboard: rewrite it as a scene.
 
@@ -60,4 +68,4 @@ If you can render the page, take one screenshot of screen 1 at phone width; if n
 - Can the reader tell what to do within a few seconds?
 - Would the look change if the subject did?
 
-Count too: screens (4 to 7) and words outside the folds (40 or fewer each). Fix what fails in one pass, then publish.
+Count too: screens (4 to 7) and words outside the folds (40 or fewer each). Read each answer aloud: if it opens with setup or a rebuttal, rewrite it as the simple sentence. Fix what fails in one pass, then publish.
