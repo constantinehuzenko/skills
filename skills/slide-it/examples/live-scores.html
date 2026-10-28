@@ -1,0 +1,188 @@
+<!-- slide-it example: "WebSockets or SSE for live scores?". These are the three FILL blocks of one finished page; the engine is
+     kit/template.html. Read it whole before you write your own. -->
+
+<!-- ═══ FILL 1 of 3: THEME ═══ -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Clean and calm, with a colour for each thing: SSE blue, WebSocket purple, scores green, chat amber. */
+:root{--radius:0.75rem;--background:#f6f7f9;--foreground:#141821;--card:#ffffff;--card-foreground:#141821;--popover:#ffffff;--popover-foreground:#141821;
+  --primary:#141821;--primary-foreground:#ffffff;--secondary:#eef0f4;--secondary-foreground:#141821;--muted:#f1f3f6;--muted-foreground:#6b7280;
+  --accent:#eef0f4;--accent-foreground:#141821;--destructive:#dc2626;--border:#e4e7ec;--input:#d9dde4;--ring:#9aa3b2;
+  --chart-1:#2563eb;--chart-2:#7c3aed;--chart-3:#16a34a;--chart-4:#d97706;--chart-5:#9aa3b2;
+  --font-sans:"Inter",ui-sans-serif,system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.dark{--background:#0c0e12;--foreground:#eef1f6;--card:#151820;--card-foreground:#eef1f6;--popover:#151820;--popover-foreground:#eef1f6;
+  --primary:#eef1f6;--primary-foreground:#151820;--secondary:#1e222c;--secondary-foreground:#eef1f6;--muted:#1b1f28;--muted-foreground:#9aa3b2;
+  --accent:#1e222c;--accent-foreground:#eef1f6;--destructive:#f87171;--border:#262b36;--input:#323846;--ring:#5b6474;
+  --chart-1:#60a5fa;--chart-2:#a78bfa;--chart-3:#4ade80;--chart-4:#fbbf24;--chart-5:#5b6474}
+</style>
+<style class="si-style">
+/* Flat, soft and colourful: each lane's parts are filled in a tint of the lane's colour and edged in the colour; the phone is a neutral device. */
+.ln2{--mid:#a3aab6;--screen:#ffffff;--bezel:#d7dce5;--sse-t:#eef4ff;--ws-t:#f4f0ff;--news-t:#e9f7ee;--chat-t:#fdf4e4;--mix:16%;--mix2:9%}
+.dark .ln2{--mid:#5b6474;--screen:#191d25;--bezel:#2c3340;--sse-t:#141c2c;--ws-t:#1b1630;--news-t:#12241a;--chat-t:#2a2112;--mix:30%;--mix2:18%}
+.ln2 svg{display:block;width:100%;height:auto;overflow:visible}
+.ln2 text{font-family:var(--si-sans);font-variant-numeric:tabular-nums}.ln2 .mono{font-family:var(--si-mono)}
+/* the phone: a soft bezel with a hairline edge, a bright screen, no outline */
+.ln2 .bez{fill:var(--bezel);stroke:var(--mid);stroke-width:1;stroke-opacity:.45}
+.ln2 .scr{fill:var(--screen)}
+/* the server and the pipes: a tint of the lane's colour, edged in the colour */
+.ln2 .srv{fill:color-mix(in oklab,var(--c) var(--mix2),var(--card));stroke:var(--c);stroke-width:1.4}
+.ln2 .pipe{fill:color-mix(in oklab,var(--c) var(--mix),var(--card));stroke:var(--c);stroke-width:1.6;stroke-linejoin:round}
+.ln2 .dash{fill:none;stroke:var(--mid);stroke-width:1.3;stroke-dasharray:3 5;stroke-linecap:round}
+/* the counter's badge */
+.ln2 .badge{fill:color-mix(in oklab,var(--c) var(--mix),var(--card))}
+/* buttons drawn on the objects: soft and chunky, a tint with a darker ledge under it; solid when it is their turn */
+.ln2 .b2 .ledge{fill:color-mix(in oklab,var(--c) 36%,var(--card));transition:fill .25s}
+.ln2 .b2 .face{fill:color-mix(in oklab,var(--c) 15%,var(--card));transition:fill .25s}
+.ln2 .b2 text{fill:color-mix(in oklab,var(--c) 85%,var(--foreground));font-size:12.5px;font-weight:700;transition:fill .25s}
+.ln2 .b2:not(.is-off) .face{fill:var(--c)}.ln2 .b2:not(.is-off) .ledge{fill:color-mix(in oklab,var(--c) 72%,#000)}.ln2 .b2:not(.is-off) text{fill:var(--card)}
+/* a message on its way: a small pill in its colour, with a thin halo so it lifts off the pipe */
+.ln2 .chip rect{fill:var(--c);stroke:var(--card);stroke-width:1.5}.ln2 .chip text{fill:var(--card);font-size:11.5px;font-weight:800}
+</style>
+
+<!-- ═══ FILL 2 of 3: PAGE ═══ -->
+<script>
+var PAGE = {
+  title: "WebSockets or SSE for live scores?",
+  screens: [
+    { id: "lanes", question: "WebSockets or SSE for live scores?",
+      answer: "SSE; chat would need a WebSocket.",
+      steps: [
+        "Two fans, one match: one app on [[SSE|chart-1]], one on a [[WebSocket|chart-2]]. One request each opens the line.",
+        "A [[goal|chart-3]]! It goes down both pipes at once.",
+        "The [[WebSocket|chart-2]] fan sends a [[cheer|chart-4]] up the same pipe.",
+        "The [[SSE|chart-1]] pipe only flows down, so the [[cheer|chart-4]] has no way back.",
+        "So [[SSE|chart-1]] sends it as a new request: one more for every message."
+      ] }
+  ]
+};
+</script>
+
+<!-- ═══ FILL 3 of 3: SCENES ═══ -->
+<script>
+/* Two lanes, one per technology, so every frame compares them: a server, its pipe, and a phone with a live scoreboard and
+   a chat box. SSE's pipe runs one way; the WebSocket has a pipe each way. A counter per lane shows the HTTP requests.
+   Colour: SSE blue, WebSocket purple, scores green, chat amber. Every move is a button on the object. */
+/* LANE: one lane panel and the space under it; GAP: the space between the lanes */
+var NS = "http://www.w3.org/2000/svg", LANE = 244, GAP = 14, PIPE0 = 98, PIPE1 = 608, PHX = 644, PHW = 128;
+function svgEl(tag, a, parent) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); if (parent) parent.appendChild(e); return e; }
+function text(parent, t, x, y, o) {
+  o = o || {};
+  var e = svgEl("text", { x: x, y: y, "text-anchor": o.align || "start", "font-size": o.size || 13, "font-weight": o.weight || 400, fill: o.fill || "var(--" + (o.color || "foreground") + ")" }, parent);
+  if (o.mono) e.setAttribute("class", "mono"); e.textContent = t; return e;
+}
+/* A soft button on an object, in a colour: a tinted face over a darker ledge; solid when it is its turn. */
+function button(parent, x, y, w, t, colour) {
+  var g = svgEl("g", { class: "b2 is-off", style: "--c:var(--" + colour + ")" }, parent);
+  svgEl("rect", { x: x - w / 2, y: y - 10.5, width: w, height: 26, rx: 13, class: "ledge" }, g);
+  svgEl("rect", { x: x - w / 2, y: y - 13, width: w, height: 26, rx: 13, class: "face" }, g);
+  var tx = svgEl("text", { x: x, y: y + 4.5, "text-anchor": "middle" }, g); tx.textContent = t;
+  return { el: g, label: function (v) { tx.textContent = v; } };
+}
+/* A message on its way: a small pill in its colour. */
+function chip(parent) {
+  var g = svgEl("g", { class: "chip", style: "display:none" }, parent), r = svgEl("rect", { y: -11, height: 22, rx: 11 }, g),
+      t = svgEl("text", { y: 4, "text-anchor": "middle" }, g);
+  return {
+    el: g,
+    show: function (msg, colour, x, y) {
+      g.style.display = ""; g.style.setProperty("--c", "var(--" + colour + ")"); g.setAttribute("transform", "translate(" + x + "," + y + ")");
+      if (t.textContent !== msg) { t.textContent = msg; var w = (t.getComputedTextLength() || msg.length * 7) + 20; r.setAttribute("x", -w / 2); r.setAttribute("width", w); }
+    },
+    hide: function () { g.style.display = "none"; }
+  };
+}
+/* A pipe between the server and the phone: one filled arrow in the lane's tint, a rounded tail flowing into a pointed head.
+   Both directions span the same x range, so a pair lines up. */
+function pipe(parent, y, colour, toServer) {
+  var h = 8, H = 14, head = 20, x0 = PIPE0, x1 = PIPE1 + head, d;
+  if (!toServer) d = "M" + (x0 + h) + " " + (y - h) + "H" + (x1 - head) + "V" + (y - H) + "L" + x1 + " " + y + "L" + (x1 - head) + " " + (y + H) + "V" + (y + h) + "H" + (x0 + h) + "A" + h + " " + h + " 0 0 1 " + (x0 + h) + " " + (y - h) + "Z";
+  else d = "M" + (x1 - h) + " " + (y - h) + "H" + (x0 + head) + "V" + (y - H) + "L" + x0 + " " + y + "L" + (x0 + head) + " " + (y + H) + "V" + (y + h) + "H" + (x1 - h) + "A" + h + " " + h + " 0 0 0 " + (x1 - h) + " " + (y - h) + "Z";
+  return svgEl("path", { d: d, class: "pipe", style: "--c:var(--" + colour + ")" }, parent);
+}
+/* One lane: title, server, pipe(s), phone, counter. */
+function lane(svg, y0, o) {
+  var c = o.colour, cv = "var(--" + c + ")", cs = "--c:" + cv, L = { y0: y0 };
+  svgEl("rect", { x: 6, y: y0, width: 788, height: LANE - 14, rx: 18, fill: "var(--" + o.tint + ")" }, svg);
+  var title = text(svg, o.name, 28, y0 + 33, { size: 17, weight: 800, fill: cv });
+  text(svg, o.sub, 28 + (title.getComputedTextLength() || o.name.length * 11.5) + 12, y0 + 33, { size: 12.5, color: "muted-foreground" });
+  /* the server: a small rack in the lane's colour */
+  var sx = 29, sy = y0 + 86, sw = 52, sh = 64;
+  svgEl("rect", { x: sx, y: sy, width: sw, height: sh, rx: 9, class: "srv", style: cs }, svg);
+  [21, 43].forEach(function (d) { svgEl("line", { x1: sx, y1: sy + d, x2: sx + sw, y2: sy + d, stroke: cv, "stroke-width": 1, "stroke-opacity": .3 }, svg); });
+  [11, 32, 53].forEach(function (d) { svgEl("circle", { cx: sx + 11, cy: sy + d, r: 2.8, fill: cv }, svg);
+    svgEl("line", { x1: sx + 21, y1: sy + d, x2: sx + sw - 10, y2: sy + d, stroke: cv, "stroke-width": 1.8, "stroke-opacity": .45, "stroke-linecap": "round" }, svg); });
+  L.serverEl = text(svg, "server", sx + sw / 2, y0 + 168, { align: "middle", size: 11, weight: 600, color: "muted-foreground" });
+  /* the pipes: SSE one way down; the WebSocket one each way */
+  if (o.both) { L.down = y0 + 103; L.up = y0 + 135; pipe(svg, L.down, c); pipe(svg, L.up, c, true); }
+  else { L.down = y0 + 119; pipe(svg, L.down, c); }
+  /* the counter: a label and a badge */
+  text(svg, "HTTP requests", 28, y0 + 212, { size: 11, weight: 600, color: "muted-foreground" });
+  svgEl("rect", { x: 118, y: y0 + 197, width: 30, height: 22, rx: 11, class: "badge", style: cs }, svg);
+  L.count = text(svg, "1", 133, y0 + 213, { align: "middle", size: 14, weight: 800 });
+  /* the phone: a soft bezel, then LIVE, the scoreboard, the minute, the chat box */
+  var px = PHX, py = y0 + 12, ph = 206, cx = px + PHW / 2, m = 9, iw = PHW - 2 * m;
+  L.phone = svgEl("rect", { x: px, y: py, width: PHW, height: ph, rx: 22, class: "bez" }, svg);
+  svgEl("rect", { x: px + 4, y: py + 4, width: PHW - 8, height: ph - 8, rx: 18, class: "scr" }, svg);
+  svgEl("rect", { x: cx - 13, y: py + 10, width: 26, height: 6, rx: 3, fill: "var(--bezel)" }, svg);
+  svgEl("circle", { cx: px + m + 8, cy: py + 30, r: 3.5, fill: "var(--destructive)" }, svg);
+  text(svg, "LIVE", px + m + 16, py + 34, { size: 11, weight: 800, color: "destructive" });
+  L.min = text(svg, "66'", px + PHW - m - 6, py + 34, { align: "end", size: 11, weight: 700, color: "muted-foreground" });
+  L.board = svgEl("rect", { x: px + m, y: py + 42, width: iw, height: 62, rx: 10, fill: "var(--news-t)" }, svg);
+  text(svg, "HAR", px + m + 10, py + 66, { size: 13.5, weight: 700 }); text(svg, "ROV", px + m + 10, py + 92, { size: 13.5, weight: 700 });
+  L.har = text(svg, "1", px + PHW - m - 10, py + 66, { align: "end", size: 15, weight: 800 }); text(svg, "0", px + PHW - m - 10, py + 92, { align: "end", size: 15, weight: 800 });
+  L.flag = text(svg, "", cx, py + 121, { align: "middle", size: 12, weight: 800, color: "chart-3" });
+  L.chatBox = svgEl("rect", { x: px + m, y: py + 130, width: iw, height: 68, rx: 10, fill: "var(--chat-t)" }, svg);
+  L.chat = text(svg, "", cx, py + 146, { align: "middle", size: 11.5, weight: 600 });
+  L.chatState = text(svg, "", cx, py + 160, { align: "middle", size: 10.5, weight: 700, color: "muted-foreground" });
+  L.chatBtn = button(svg, cx, py + 179, iw - 8, "Send", "chart-4");
+  L.chipDown = chip(svg); L.chipUp = chip(svg);
+  return L;
+}
+function ease(t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+/* The engine eases each step; undo it so a move can use its own ease. */
+function linear(t) { return 1 - Math.cbrt(1 - t); }
+/* The step clock: u runs evenly through a step; a message travels for its first 60%, then lands. */
+function clock(s) { var u = s.step === s.prev + 1 ? linear(s.t) : 1; return { u: u, k: ease(Math.min(1, u / .6)), landed: u >= .6 }; }
+function quad(t, a, c, b) { var v = 1 - t; return [v * v * a[0] + 2 * v * t * c[0] + t * t * b[0], v * v * a[1] + 2 * v * t * c[1] + t * t * b[1]]; }
+
+var SCENES = {
+  /* Next and Back drive it. 1 the setup: two fans, two lines, 1 request each · 2 a goal goes down both at once ·
+     3 the WebSocket fan cheers: up the same pipe · 4 the SSE fan tries: no way back · 5 so SSE sends it as a new request:
+     its counter goes to 2. */
+  "lanes": {
+    tween: 2400,
+    stage: function (root, s) {
+      var wrap = s.el("div", "ln2"); root.appendChild(wrap);
+      var y0B = LANE + GAP - 10;
+      var svg = svgEl("svg", { viewBox: "0 0 800 " + (y0B + LANE - 10), role: "img", "aria-label": "SSE and a WebSocket side by side: a score down both, a cheer back up" }, wrap);
+      var A = lane(svg, 4, { name: "SSE", sub: "a one-way stream", colour: "chart-1", tint: "sse-t" }),
+          B = lane(svg, y0B, { name: "WebSocket", sub: "a two-way pipe", colour: "chart-2", tint: "ws-t", both: true });
+      /* SSE's way back: a new request, on its own path under the pipe */
+      var P0 = [PHX - 6, A.y0 + 153], P1 = [86, A.y0 + 143], C = [(PHX + 86) / 2, A.y0 + 199];
+      var post = svgEl("path", { d: "M" + P0 + "Q" + C + " " + P1, class: "dash" }, svg),
+          postName = text(svg, "new request: POST /cheer", C[0], A.y0 + 165, { align: "middle", size: 11, weight: 700, mono: true, color: "muted-foreground" }),
+          stuck = text(svg, "✕ no way back", 470, A.y0 + 150, { align: "middle", size: 12, weight: 700, color: "destructive" });
+      return function (s) {
+        var st = s.step, c = clock(s), scored = st > 2 || (st === 2 && c.landed), wsGot = st > 3 || (st === 3 && c.landed),
+            tried = st >= 4, stuckNow = st > 4 || (st === 4 && c.landed), posted = st === 5 && c.landed;
+        [A, B].forEach(function (L) { L.har.textContent = scored ? "2" : "1"; L.min.textContent = scored ? "67'" : "66'"; L.flag.textContent = scored ? "GOAL!" : ""; L.chipDown.hide(); L.chipUp.hide(); });
+        A.count.textContent = posted ? "2" : "1"; A.count.setAttribute("fill", "var(--" + (posted ? "chart-1" : "foreground") + ")");
+        A.chatBtn.label(st >= 5 ? "Send via POST" : "Send");
+        /* no pressing for now: Next and Back drive it; the pill that is acting in this step shows solid */
+        B.chatBtn.el.classList.toggle("is-off", st !== 3); A.chatBtn.el.classList.toggle("is-off", st < 4);
+        A.chat.textContent = B.chat.textContent = scored ? "“what a goal!”" : "";
+        A.chatState.textContent = posted ? "sent, as a request" : stuckNow ? "not sent" : "";
+        A.chatState.setAttribute("fill", "var(--" + (posted ? "chart-1" : "destructive") + ")");
+        B.chatState.textContent = wsGot ? "sent ✓" : ""; B.chatState.setAttribute("fill", "var(--chart-2)");
+        stuck.style.display = st === 4 && c.landed ? "" : "none";
+        post.style.display = postName.style.display = st === 5 ? "" : "none";
+        if (st === 2 && !c.landed) { A.chipDown.show("GOAL 2–1", "chart-3", PIPE0 + (PHX - PIPE0) * c.k, A.down); B.chipDown.show("GOAL 2–1", "chart-3", PIPE0 + (PHX - PIPE0) * c.k, B.down); }
+        if (st === 3 && !c.landed) B.chipUp.show("what a goal!", "chart-4", PHX + (PIPE0 - PHX) * c.k, B.up);
+        if (st === 4 && !c.landed) A.chipUp.show("what a goal!", c.k > .2 ? "destructive" : "chart-4", PHX + (PIPE0 - PHX) * Math.min(c.k, .2), A.down);
+        if (st === 5 && !c.landed) { var q = quad(c.k, P0, C, P1); A.chipUp.show("what a goal!", "chart-4", q[0], q[1]); }
+      };
+    }
+  }
+};
+</script>

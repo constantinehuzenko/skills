@@ -8,8 +8,8 @@
     {
       "name": "slide-it",
       "source": "./",
-      "description": "Turns research, a report, a plan or a decision into a focused page that reads like slides: one question per screen, a short answer, and a live scene the reader plays with.",
-      "version": "1.0.0"
+      "description": "Turns an explanation, a decision or a pull request into a focused page: one question per screen, and a drawn scene that changes step by step as you press Next.",
+      "version": "2.0.0"
     }
   ]
 }

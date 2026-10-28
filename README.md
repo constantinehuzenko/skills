@@ -1,12 +1,10 @@
 # slide-it
 
-**One question per screen, and the answer moving in front of you.**
+**One question per screen, and a drawing that changes as you press Next.**
 
-A Claude skill that turns research, a report, a plan or a decision into a focused page that reads like slides. Each screen answers one question, phrased the way you would search for it, in one or two sentences, with a live scene underneath that you can play with. Every screen goes a level deeper.
+A Claude skill that turns an explanation, a decision, a report or a pull request into a focused page. Each screen answers one question with a short sentence and a drawn scene: the things themselves (servers, pipes, phones with their real screens), side by side when two options are compared. Next and Back step through it, and each step changes one thing.
 
 On [skills.sh](https://skills.sh/constantinehuzenko/skills/slide-it).
-
-<!-- before/after image: plain Claude vs slide-it, same input -->
 
 ## Install
 
@@ -23,7 +21,7 @@ On [skills.sh](https://skills.sh/constantinehuzenko/skills/slide-it).
 npx skills@latest add constantinehuzenko/skills --skill slide-it
 ```
 
-Use one of the two, not both.
+Use one of the two, not both. To update later, run the same command again (for the plugin, `/plugin marketplace update constantinehuzenko` first).
 
 Then add this line to your `CLAUDE.md` (`~/.claude/CLAUDE.md` for every project):
 
@@ -31,46 +29,34 @@ Then add this line to your `CLAUDE.md` (`~/.claude/CLAUDE.md` for every project)
 For any artifact, page or HTML built from content, use the slide-it skill; it works alongside artifact-design.
 ```
 
-Claude's built-in `artifact-design` skill usually wins the trigger for pages. Without the line, slide-it loaded by itself in 3 of 8 test runs. You can also just say "slide it".
+Claude's built-in `artifact-design` skill usually wins the trigger for pages. You can also just say "slide it".
 
 ## Use it
 
-> Turn these notes into a page I can share. Slide it.
+> Make an artifact that helps me understand this pull request. Slide it.
 
-> Make an artifact from this research.
+> Should we use WebSockets or SSE? Slide it.
 
 ## What you get
 
-- **4 to 7 screens**, each answering one question the way a reader would ask it.
-- **A short answer**, set large: one or two sentences.
-- **A live scene** under it, showing the thing itself: customers queueing at a café, air moving in a pair of headphones, a runner on a track. It plays for about ten seconds when the screen comes into view, then rests so you can read. Move the control and it plays again with your setting.
-- **A "More" fold** on every screen for the detail, and **full notes with every source** at the end.
-- **A look borrowed from the kind of app people use for the subject** (travel, finance, health, developer docs and more), in light and dark.
-- **The questions listed at the right edge** on a desktop, tabs on a phone.
+- **Screens, one question each**, listed in a menu at the right edge on a desktop.
+- **A short answer** under each question.
+- **A drawn scene** that changes step by step: press Next and one thing moves or changes. Reset starts it over.
+- **One card for the current step**, a short sentence whose key words carry the colour of the part they name, so the words point at the picture.
+- **Folds** for detail and code, light and dark themes, and keyboard shortcuts.
 
-## Does it help?
+## Example
 
-In blind tests, one person picked the better of two pages built from the same input without knowing which was which. Plain Claude (Sonnet) against Claude with slide-it: **7–0 for slide-it** in the first round.
-<!-- add the everyday-topics round once tallied -->
-
-It costs more: a slide-it page took 5 to 8 minutes and about three times the tokens of a plain page in our runs.
-
-## Examples
-
-Open them in a browser:
-
-- [How noise cancelling works](skills/slide-it/examples/explainer.html): an explainer
-- [Should a café buy a second espresso machine?](skills/slide-it/examples/decision.html): a decision
-- [8 weeks to a first 10K](skills/slide-it/examples/plan.html): a plan
+Open it in a browser: [WebSockets or SSE for live scores?](examples/websockets-or-sse.html). Two lanes, SSE and a WebSocket, each with a server, its pipe and a phone. A goal goes down both; a cheer comes back up only one.
 
 ## How it works
 
-A short `SKILL.md` in six steps: find the main point, open the nearest example, plan the screens (a question, an answer and a scene line for each), choose the look, build, check. Behind it: the three example pages, a page scaffold, 15 app styles, and an optional isometric drawing kit for when a machine is the subject. It runs no scripts, so it works in claude.ai artifacts as well as Claude Code.
+`kit/template.html` is the engine: screens, menu, stepping, the step card, themes, and a red box that names any mistake. Claude fills three blocks (a theme, the page's text and the scenes) and leaves the engine alone. `SKILL.md` points it at one finished example as the bar to match. It runs no scripts, so it works in claude.ai artifacts as well as Claude Code.
 
 **Not for** slide decks or .pptx files: use the Slides type or the pptx skill.
 
 ## Credits
 
-The isometric drawing kit is a browser build of [Anatomy](https://github.com/wheresryan22/anatomy) (MIT). Other ideas and credits are in [THIRD_PARTY.md](skills/slide-it/THIRD_PARTY.md).
+Icons from Lucide (ISC) and Feather (MIT); details and licences in [THIRD_PARTY.md](skills/slide-it/THIRD_PARTY.md).
 
 MIT licence.
