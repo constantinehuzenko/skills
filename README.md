@@ -45,9 +45,12 @@ Claude's built-in `artifact-design` skill usually wins the trigger for pages. Yo
 - **One card for the current step**, a short sentence whose key words carry the colour of the part they name, so the words point at the picture.
 - **Folds** for detail and code, light and dark themes, and keyboard shortcuts.
 
-## Example
+## Examples
 
-Open it in a browser: [WebSockets or SSE for live scores?](examples/websockets-or-sse.html). Two lanes, SSE and a WebSocket, each with a server, its pipe and a phone. A goal goes down both; a cheer comes back up only one.
+Open them in a browser:
+
+- [WebSockets or SSE for live scores?](examples/websockets-or-sse.html). Two lanes, SSE and a WebSocket, each with a server, its pipe and a phone. A goal goes down both; a cheer comes back up only one.
+- [List virtualization](examples/list-virtualization.html). Why a long list downloads every image, and how virtualizing it against a scrolling panel fixes it. A product list sits beside a grid of every row in the DOM, rulers show where each list starts, and the last screen has before and after numbers.
 
 ## How it works
 
